@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinuxLearner", "LinuxLearner\LinuxLearner.csproj", "{678F189F-6E48-4F9D-BA7B-29BC17C872D1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinuxLearner.Routes", "LinuxLearner.Routes\LinuxLearner.Routes.csproj", "{FB8364DD-DB32-4038-BA21-8025917D7C4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{678F189F-6E48-4F9D-BA7B-29BC17C872D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{678F189F-6E48-4F9D-BA7B-29BC17C872D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{678F189F-6E48-4F9D-BA7B-29BC17C872D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB8364DD-DB32-4038-BA21-8025917D7C4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB8364DD-DB32-4038-BA21-8025917D7C4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB8364DD-DB32-4038-BA21-8025917D7C4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB8364DD-DB32-4038-BA21-8025917D7C4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
