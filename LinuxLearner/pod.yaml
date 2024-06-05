@@ -6,7 +6,7 @@ metadata:
     role: linux-learner-pod
 spec:
   containers:
-    - name: db
+    - name: postgres
       image: docker.io/library/postgres:16
       imagePullPolicy: IfNotPresent
       env:
@@ -24,6 +24,20 @@ spec:
       volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgresql-data
+    - name: keydb
+      image: docker.io/eqalpha/keydb
+      ports:
+        - containerPort: 6379
+          protocol: TCP
+          hostPort: 8001
+      command:
+        - "keydb-server"
+      args:
+        - "--appendonly"
+        - "yes"
+      volumeMounts:
+        - mountPath: /data
+          name: keydb-data
     - name: keycloak
       image: quay.io/keycloak/keycloak:24.0.5
       args:
@@ -45,6 +59,9 @@ spec:
     - name: postgresql-data
       hostPath:
         path: .volumes/postgresql-data
+    - name: keydb-data
+      hostPath:
+        path: .volumes/keydb-data
     - name: keycloak-data
       hostPath:
         path: .volumes/keycloak-data
