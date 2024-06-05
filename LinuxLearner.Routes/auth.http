@@ -1,5 +1,5 @@
 # Obtain token for student
-POST {{keycloak-server}}/realms/master/protocol/openid-connect/token
+POST {{keycloak}}/realms/master/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=password&client_id={{keycloak-client-id}}&client_secret={{keycloak-client-secret}}&username={{keycloak-student-username}}&password={{keycloak-password}}
@@ -10,7 +10,7 @@ client.global.set("student-token", response.body["access_token"]);
 ###
 
 # Obtain token for teacher
-POST {{keycloak-server}}/realms/master/protocol/openid-connect/token
+POST {{keycloak}}/realms/master/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=password&client_id={{keycloak-client-id}}&client_secret={{keycloak-client-secret}}&username={{keycloak-teacher-username}}&password={{keycloak-password}}
