@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using Keycloak.AuthServices.Authentication;
 using Keycloak.AuthServices.Authorization;
 using LinuxLearner.Database;
+using LinuxLearner.Features.Users;
 using Microsoft.EntityFrameworkCore;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -32,11 +34,20 @@ builder.Services.AddMemoryCache();
 builder.Services.AddFusionCache()
     .WithRegisteredMemoryCache()
     .WithRegisteredDistributedCache();
-builder.Services.AddFusionCacheCysharpMemoryPackSerializer();
+builder.Services.AddFusionCacheSystemTextJsonSerializer();
 // DB
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQL"));
+});
+// DI
+builder.Services.AddScoped<UserRepository>();
+
+builder.Services.AddScoped<UserService>();
+// serialization
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 var app = builder.Build();
@@ -51,10 +62,8 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", async (IFusionCache fusionCache) =>
-{
-    var i = await fusionCache.GetOrSetAsync("my-key", 1);
-    return i.ToString();
-});
+var group = app.MapGroup("/api/v1").RequireAuthorization();
+
+group.MapUserEndpoints();
 
 app.Run();

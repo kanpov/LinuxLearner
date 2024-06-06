@@ -19,7 +19,7 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
         <PackageReference Include="ZiggyCreatures.FusionCache" Version="1.2.0" />
-        <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.CysharpMemoryPack" Version="1.2.0" />
+        <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="1.2.0" />
     </ItemGroup>
 
     <ItemGroup>
