@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FluentValidation;
 using Keycloak.AuthServices.Authentication;
 using Keycloak.AuthServices.Authorization;
 using LinuxLearner.Database;
@@ -59,6 +60,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<UserRepository>();
 
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddScoped<IValidator<UserPatchDto>, UserPatchDtoValidator>();
 // serialization
 builder.Services.ConfigureHttpJsonOptions(options =>
 {

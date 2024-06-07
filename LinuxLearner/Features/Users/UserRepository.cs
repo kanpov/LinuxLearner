@@ -26,6 +26,25 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
     public async Task UpdateUserAsync(User user)
     {
         await dbContext.SaveChangesAsync();
+        
         await fusionCache.SetAsync($"/users/{user.Username}", user);
+    }
+
+    public async Task DeleteUserAsync(string username)
+    {
+        await dbContext.Users
+            .Where(u => u.Username == username)
+            .ExecuteDeleteAsync();
+
+        await fusionCache.RemoveAsync($"/users/{username}");
+    }
+
+    public async Task<IEnumerable<User>> GetUsersAsync(int page, int pageSize)
+    {
+        return await dbContext.Users
+            .OrderBy(u => u.RegistrationTime)
+            .Skip(pageSize * (page - 1))
+            .Take(pageSize)
+            .ToListAsync();
     }
 }

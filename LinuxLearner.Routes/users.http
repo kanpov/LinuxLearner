@@ -1,8 +1,28 @@
 // Get self user
-GET {{api}}/self
+GET {{api}}/user/self
+Authorization: Bearer {{student-token}}
+###
+
+// Patch self user
+PATCH {{api}}/user/self
+Authorization: Bearer {{student-token}}
+Content-Type: application/json
+
+{
+  "description": "new_description"
+}
+###
+
+// Delete self user
+DELETE {{api}}/user/self
 Authorization: Bearer {{student-token}}
 ###
 
 // Get user by username
 GET {{api}}/users/sampleteacher
+Authorization: Bearer {{student-token}}
+###
+
+// Get all users paged
+GET {{api}}/users
 Authorization: Bearer {{student-token}}

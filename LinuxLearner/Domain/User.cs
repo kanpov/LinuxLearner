@@ -12,4 +12,9 @@ public class User
     public DateTimeOffset RegistrationTime { get; set; } = DateTimeOffset.UtcNow;
 
     public UserDto MapToUserDto() => new(Username, UserType, Description, RegistrationTime);
+
+    public void ProjectUserPatchDto(UserPatchDto userPatchDto)
+    {
+        Description = userPatchDto.Description;
+    }
 }
