@@ -85,3 +85,6 @@ var group = app.MapGroup("/api/v1").RequireAuthorization();
 group.MapUserEndpoints();
 
 app.Run();
+
+
+public partial class Program;
