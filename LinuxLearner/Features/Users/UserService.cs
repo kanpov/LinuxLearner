@@ -5,20 +5,13 @@ namespace LinuxLearner.Features.Users;
 
 public class UserService(UserRepository userRepository)
 {
-    public async Task<UserDto> GetStudentAsync(ClaimsPrincipal claimsPrincipal)
-    {
-        return await GetUserAsync(claimsPrincipal, UserType.Student);
-    }
-
-    public async Task<UserDto> GetTeacherAsync(ClaimsPrincipal claimsPrincipal)
-    {
-        return await GetUserAsync(claimsPrincipal, UserType.Teacher);
-    }
-    
-    private async Task<UserDto> GetUserAsync(ClaimsPrincipal claimsPrincipal, UserType userType)
+    public async Task<UserDto> GetUserAsync(ClaimsPrincipal claimsPrincipal)
     {
         var username = claimsPrincipal.Identity!.Name!;
         var user = await userRepository.GetUserAsync(username);
+        var isStudent = claimsPrincipal.Claims.First(c => c.Type == "resource_access")
+            .Value.Contains("student");
+        var userType = isStudent ? UserType.Student : UserType.Teacher;
 
         if (user is not null) return user.MapToUserDto();
 

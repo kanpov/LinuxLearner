@@ -1,0 +1,3 @@
+// Get self user
+GET {{api}}/users/self
+Authorization: Bearer {{teacher-token}}

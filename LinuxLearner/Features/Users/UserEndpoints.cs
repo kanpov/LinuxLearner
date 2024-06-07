@@ -7,11 +7,11 @@ public static class UserEndpoints
 {
     public static void MapUserEndpoints(this RouteGroupBuilder builder)
     {
-        builder.MapGet("/users/me", GetStudent).RequireAuthorization("student");
+        builder.MapGet("/users/self", GetSelfUser).RequireAuthorization();
     }
 
-    private static async Task<Ok<UserDto>> GetStudent(ClaimsPrincipal claimsPrincipal, UserService userService)
+    private static async Task<Ok<UserDto>> GetSelfUser(ClaimsPrincipal claimsPrincipal, UserService userService)
     {
-        return TypedResults.Ok(await userService.GetStudentAsync(claimsPrincipal));
+        return TypedResults.Ok(await userService.GetUserAsync(claimsPrincipal));
     }
 }

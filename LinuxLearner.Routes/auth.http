@@ -19,7 +19,3 @@ grant_type=password&client_id={{keycloak-client-id}}&client_secret={{keycloak-cl
 client.global.set("teacher-token", response.body["access_token"]);
  %}
 ###
-
-# Mkreq
-GET {{api}}/users/me
-Authorization: Bearer {{student-token}}
