@@ -1,3 +1,8 @@
 // Get self user
-GET {{api}}/users/self
-Authorization: Bearer {{teacher-token}}
+GET {{api}}/self
+Authorization: Bearer {{student-token}}
+###
+
+// Get user by username
+GET {{api}}/users/sampleteacher
+Authorization: Bearer {{student-token}}

@@ -3,14 +3,29 @@ using Keycloak.AuthServices.Authentication;
 using Keycloak.AuthServices.Authorization;
 using LinuxLearner.Database;
 using LinuxLearner.Features.Users;
+using LinuxLearner.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Events;
 using ZiggyCreatures.Caching.Fusion;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// logging
+builder.Services.AddSerilog(config =>
+{
+    config.MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning);
+    config.MinimumLevel.Information();
+    config.Enrich.FromLogContext();
+    const string template = "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {SourceContext} {Message} {ClassName} \n";
+    config.WriteTo.Console(outputTemplate: template);
+});
 // swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SchemaFilter<EnumSchemaFilter>();
+});
 // auth
 builder.Services.AddKeycloakWebApiAuthentication(builder.Configuration);
 builder.Services.AddAuthorization(options =>

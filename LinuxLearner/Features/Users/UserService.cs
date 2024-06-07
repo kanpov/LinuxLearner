@@ -5,7 +5,7 @@ namespace LinuxLearner.Features.Users;
 
 public class UserService(UserRepository userRepository)
 {
-    public async Task<UserDto> GetUserAsync(ClaimsPrincipal claimsPrincipal)
+    public async Task<UserDto> GetAuthorizedUserAsync(ClaimsPrincipal claimsPrincipal)
     {
         var username = claimsPrincipal.Identity!.Name!;
         var user = await userRepository.GetUserAsync(username);
@@ -25,5 +25,11 @@ public class UserService(UserRepository userRepository)
         await userRepository.AddUserAsync(newUser);
 
         return newUser.MapToUserDto();
+    }
+
+    public async Task<UserDto?> GetUserAsync(string username)
+    {
+        var user = await userRepository.GetUserAsync(username);
+        return user?.MapToUserDto();
     }
 }
