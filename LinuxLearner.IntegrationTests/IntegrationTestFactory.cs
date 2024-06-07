@@ -62,15 +62,19 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
 
     public async Task InitializeAsync()
     {
+        var tasks = new List<Task>();
+        
         if (PostgresContainer.State != TestcontainersStates.Running)
         {
-            await PostgresContainer.StartAsync();
+            tasks.Add(PostgresContainer.StartAsync());
         }
 
         if (KeyDbContainer.State != TestcontainersStates.Running)
         {
-            await KeyDbContainer.StartAsync();
+            tasks.Add(KeyDbContainer.StartAsync());
         }
+
+        await Task.WhenAll(tasks);
     }
 
     public new Task DisposeAsync() => Task.CompletedTask;

@@ -1,4 +1,5 @@
 using LinuxLearner.Database;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -16,8 +17,8 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
     {
         Services = factory.Services.CreateScope().ServiceProvider;
 
-        // if (_migrationComplete) return;
-        // DbContext.Database.Migrate();
-        // _migrationComplete = true;
+        if (_migrationComplete) return;
+        DbContext.Database.Migrate();
+        _migrationComplete = true;
     }
 }
