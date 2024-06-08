@@ -1,6 +1,6 @@
 // Get self user
 GET {{api}}/user/self
-Authorization: Bearer {{student-token}}
+Authorization: Bearer {{teacher-token}}
 ###
 
 // Patch self user

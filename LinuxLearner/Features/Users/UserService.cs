@@ -12,7 +12,7 @@ public class UserService(UserRepository userRepository)
         return user.MapToUserDto();
     }
     
-    public async Task<UserDto?> PatchAuthorizedUserAsync(HttpContext httpContext, UserPatchDto userPatchDto)
+    public async Task<UserDto> PatchAuthorizedUserAsync(HttpContext httpContext, UserPatchDto userPatchDto)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
         

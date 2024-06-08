@@ -77,5 +77,9 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
         await Task.WhenAll(tasks);
     }
 
-    public new Task DisposeAsync() => Task.CompletedTask;
+    public new async Task DisposeAsync()
+    {
+        await PostgresContainer.StopAsync();
+        await KeyDbContainer.StopAsync();
+    }
 }

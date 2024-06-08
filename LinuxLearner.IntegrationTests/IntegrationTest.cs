@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using LinuxLearner.Database;
+using LinuxLearner.Domain;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ZiggyCreatures.Caching.Fusion;
@@ -20,5 +23,31 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         if (_migrationComplete) return;
         DbContext.Database.Migrate();
         _migrationComplete = true;
+    }
+
+    protected static HttpContext MakeContext(UserType userType)
+    {
+        return userType switch
+        {
+            UserType.Student => MakeContext("student"),
+            UserType.Teacher => MakeContext("teacher"),
+            _ => throw new ArgumentOutOfRangeException(nameof(userType), userType, null)
+        };
+    }
+    
+    private static HttpContext MakeContext(string role)
+    {
+        var httpContext = new DefaultHttpContext();
+        
+        var claimsPrincipal = new ClaimsPrincipal();
+        claimsPrincipal.AddIdentity(new ClaimsIdentity(
+        [
+            new Claim("preferred_username", role + Random.Shared.Next(100000, 1000000)),
+            new Claim("resource_access", role)
+        ], "Bearer", "preferred_username", "resource_access"));
+
+        httpContext.User = claimsPrincipal;
+
+        return httpContext;
     }
 }

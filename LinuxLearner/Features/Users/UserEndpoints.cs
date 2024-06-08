@@ -22,7 +22,7 @@ public static class UserEndpoints
         return TypedResults.Ok(userDto);
     }
     
-    private static async Task<Results<NotFound, ValidationProblem, Ok<UserDto>>> PatchSelfUser(
+    private static async Task<Results<ValidationProblem, Ok<UserDto>>> PatchSelfUser(
         UserService userService, HttpContext httpContext, UserPatchDto userPatchDto,
         IValidator<UserPatchDto> validator)
     {
@@ -30,7 +30,6 @@ public static class UserEndpoints
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
         
         var userDto = await userService.PatchAuthorizedUserAsync(httpContext, userPatchDto);
-        if (userDto is null) return TypedResults.NotFound();
         return TypedResults.Ok(userDto);
     }
 
