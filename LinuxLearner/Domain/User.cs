@@ -17,6 +17,8 @@ public class User
         init => _registrationTime = value.ToUniversalTime();
     }
 
+    public List<Course> Courses { get; set; } = [];
+
     public UserDto MapToUserDto() => new(Username, UserType, Description, RegistrationTime);
 
     public void ProjectUserPatchDto(UserPatchDto userPatchDto)

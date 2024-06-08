@@ -15,5 +15,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.RegistrationTime).IsRequired();
 
         builder.Property(u => u.Description).HasMaxLength(200);
+
+        builder.ToTable("Users");
     }
 }
