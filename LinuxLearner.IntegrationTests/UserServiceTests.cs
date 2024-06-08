@@ -20,7 +20,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
 
         await AssertUserExistenceAsync(userDto);
         userDto.UserType.Should().Be(userType);
-        userDto.Username.Should().Be(httpContext.User.Identity!.Name!);
+        userDto.Name.Should().Be(httpContext.User.Identity!.Name!);
     }
 
     [Theory]
@@ -44,7 +44,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         var initialDto = await Service.GetAuthorizedUserAsync(httpContext);
         await Service.DeleteAuthorizedUserAsync(httpContext);
 
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == initialDto.Username);
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == initialDto.Name);
         user.Should().BeNull();
     }
 
@@ -82,7 +82,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
 
     private async Task AssertUserExistenceAsync(UserDto userDto)
     {
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Username);
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
         user.Should().NotBeNull();
         user.Should().BeEquivalentTo(userDto);
     }
