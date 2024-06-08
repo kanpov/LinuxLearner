@@ -72,7 +72,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         DbContext.AddRange(users);
         await DbContext.SaveChangesAsync();
 
-        var expectedDtos = users.Select(u => u.MapToUserDto());
+        var expectedDtos = users.Select(UserService.MapToUserDto);
         var actualDtos = await Service.GetUsersAsync(1, 10);
         expectedDtos.Should().BeEquivalentTo(actualDtos);
     }

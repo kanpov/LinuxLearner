@@ -19,7 +19,7 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
 
     public async Task AddUserAsync(User user)
     {
-        dbContext.Users.Add(user);
+        dbContext.Add(user);
         await UpdateUserAsync(user);
     }
 

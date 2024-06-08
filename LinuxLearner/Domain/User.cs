@@ -1,5 +1,3 @@
-using LinuxLearner.Features.Users;
-
 namespace LinuxLearner.Domain;
 
 public class User
@@ -18,11 +16,4 @@ public class User
     }
 
     public List<Course> Courses { get; set; } = [];
-
-    public UserDto MapToUserDto() => new(Username, UserType, Description, RegistrationTime);
-
-    public void ProjectUserPatchDto(UserPatchDto userPatchDto)
-    {
-        Description = userPatchDto.Description;
-    }
 }

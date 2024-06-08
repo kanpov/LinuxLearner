@@ -1,0 +1,15 @@
+// Create course
+POST {{api}}/courses
+Authorization: Bearer {{teacher-token}}
+Content-Type: application/json
+
+{
+  "name": "My course name",
+  "description": "Sample description",
+  "acceptanceMode": "InviteRequired"
+}
+###
+
+// Retrieve course
+GET {{api}}/courses/76714d98-4498-4200-a278-1a0f48e524e5
+Authorization: Bearer {{student-token}}

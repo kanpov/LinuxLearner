@@ -9,17 +9,17 @@ public class UserService(UserRepository userRepository)
     public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
-        return user.MapToUserDto();
+        return MapToUserDto(user);
     }
     
     public async Task<UserDto> PatchAuthorizedUserAsync(HttpContext httpContext, UserPatchDto userPatchDto)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
         
-        user.ProjectUserPatchDto(userPatchDto);
+        ProjectUserPatchDto(user, userPatchDto);
         await userRepository.UpdateUserAsync(user);
 
-        return user.MapToUserDto();
+        return MapToUserDto(user);
     }
 
     public async Task DeleteAuthorizedUserAsync(HttpContext httpContext)
@@ -31,7 +31,7 @@ public class UserService(UserRepository userRepository)
     public async Task<UserDto?> GetUserAsync(string username)
     {
         var user = await userRepository.GetUserAsync(username);
-        return user?.MapToUserDto();
+        return user is null ? null : MapToUserDto(user);
     }
 
     public async Task<IEnumerable<UserDto>> GetUsersAsync(int page, int pageSize)
@@ -39,7 +39,7 @@ public class UserService(UserRepository userRepository)
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
 
         var users = await userRepository.GetUsersAsync(page, pageSize);
-        return users.Select(u => u.MapToUserDto());
+        return users.Select(MapToUserDto);
     }
 
     private async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
@@ -64,5 +64,13 @@ public class UserService(UserRepository userRepository)
         await userRepository.AddUserAsync(newUser);
 
         return newUser;
+    }
+
+    public static UserDto MapToUserDto(User user) =>
+        new(user.Username, user.UserType, user.Description, user.RegistrationTime);
+
+    private static void ProjectUserPatchDto(User user, UserPatchDto userPatchDto)
+    {
+        user.Description = userPatchDto.Description;
     }
 }

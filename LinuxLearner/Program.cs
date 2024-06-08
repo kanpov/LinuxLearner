@@ -3,6 +3,7 @@ using FluentValidation;
 using Keycloak.AuthServices.Authentication;
 using Keycloak.AuthServices.Authorization;
 using LinuxLearner.Database;
+using LinuxLearner.Features.Courses;
 using LinuxLearner.Features.Users;
 using LinuxLearner.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -58,8 +59,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 // DI
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<CourseRepository>();
 
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<CourseService>();
 
 builder.Services.AddScoped<IValidator<UserPatchDto>, UserPatchDtoValidator>();
 // serialization
@@ -83,6 +86,7 @@ app.UseAuthorization();
 var group = app.MapGroup("/api/v1").RequireAuthorization();
 
 group.MapUserEndpoints();
+group.MapCourseEndpoints();
 
 app.Run();
 
