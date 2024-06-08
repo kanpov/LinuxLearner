@@ -51,11 +51,30 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     [Theory, AutoData]
     public async Task GetUserAsync_ShouldReturnUser_WhenItExists(User user)
     {
-        DbContext.Users.Add(user);
+        DbContext.Add(user);
         await DbContext.SaveChangesAsync();
 
         var userDto = await Service.GetUserAsync(user.Username);
         userDto.Should().BeEquivalentTo(user);
+    }
+
+    [Theory, AutoData]
+    public async Task GetUserAsync_ShouldReturnNull_WithNoUserExisting(string username)
+    {
+        var userDto = await Service.GetUserAsync(username);
+        userDto.Should().BeNull();
+    }
+
+    [Theory, AutoData]
+    public async Task GetUsersAsync_ShouldReturnAllMatching(List<User> users)
+    {
+        await DbContext.Users.ExecuteDeleteAsync();
+        DbContext.AddRange(users);
+        await DbContext.SaveChangesAsync();
+
+        var expectedDtos = users.Select(u => u.MapToUserDto());
+        var actualDtos = await Service.GetUsersAsync(1, 10);
+        expectedDtos.Should().BeEquivalentTo(actualDtos);
     }
 
     private async Task AssertUserExistenceAsync(UserDto userDto)

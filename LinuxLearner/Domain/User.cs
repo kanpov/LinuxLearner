@@ -9,7 +9,13 @@ public class User
     public UserType UserType { get; set; } = UserType.Student;
     
     public string? Description { get; set; }
-    public DateTimeOffset RegistrationTime { get; set; } = DateTimeOffset.UtcNow;
+
+    private readonly DateTimeOffset _registrationTime;
+    public DateTimeOffset RegistrationTime
+    {
+        get => _registrationTime;
+        init => _registrationTime = value.ToUniversalTime();
+    }
 
     public UserDto MapToUserDto() => new(Username, UserType, Description, RegistrationTime);
 
