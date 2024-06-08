@@ -11,6 +11,9 @@ public static class CourseEndpoints
         builder.MapPost("/courses", CreateCourse)
             .RequireAuthorization("teacher");
 
+        builder.MapPatch("/courses/{id:guid}", PatchCourse)
+            .RequireAuthorization("teacher");
+
         builder.MapGet("/courses/{id:guid}", GetCourse)
             .WithName(nameof(GetCourse));
     }
@@ -24,6 +27,17 @@ public static class CourseEndpoints
         
         var courseDto = await courseService.CreateCourseAsync(courseCreateDto);
         return TypedResults.CreatedAtRoute(courseDto, nameof(GetCourse), new { id = courseDto.Id });
+    }
+
+    private static async Task<Results<ValidationProblem, NotFound, NoContent>> PatchCourse(
+        CourseService courseService, Guid id, CoursePatchDto coursePatchDto,
+        IValidator<CoursePatchDto> validator, HttpContext httpContext)
+    {
+        var validationResult = await validator.ValidateAsync(coursePatchDto);
+        if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
+
+        var success = await courseService.PatchCourseAsync(id, coursePatchDto);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     private static async Task<Results<NotFound, Ok<CourseDto>>> GetCourse(

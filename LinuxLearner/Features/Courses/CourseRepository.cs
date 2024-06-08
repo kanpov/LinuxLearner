@@ -23,7 +23,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         await UpdateCourseAsync(course);
     }
 
-    private async Task UpdateCourseAsync(Course course)
+    public async Task UpdateCourseAsync(Course course)
     {
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/courses/{course.Id}", course);

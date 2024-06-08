@@ -13,3 +13,13 @@ Content-Type: application/json
 // Retrieve course
 GET {{api}}/courses/76714d98-4498-4200-a278-1a0f48e524e5
 Authorization: Bearer {{student-token}}
+###
+
+// Partially modify course
+PATCH {{api}}/courses/76714d98-4498-4200-a278-1a0f48e524e6
+Authorization: Bearer {{teacher-token}}
+Content-Type: application/json
+
+{
+  "description": "new fancy desc"
+}
