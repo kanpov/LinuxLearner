@@ -8,12 +8,7 @@ public class User
     
     public string? Description { get; set; }
 
-    private readonly DateTimeOffset _registrationTime;
-    public DateTimeOffset RegistrationTime
-    {
-        get => _registrationTime;
-        init => _registrationTime = value.ToUniversalTime();
-    }
+    public DateTimeOffset RegistrationTime { get; set; } = DateTimeOffset.UtcNow;
 
     public List<Course> Courses { get; set; } = [];
 }

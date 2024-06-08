@@ -48,14 +48,16 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         user.Should().BeNull();
     }
 
-    [Theory, AutoData]
+    [Theory, CustomAutoData]
     public async Task GetUserAsync_ShouldReturnUser_WhenItExists(User user)
     {
         DbContext.Add(user);
         await DbContext.SaveChangesAsync();
 
         var userDto = await Service.GetUserAsync(user.Username);
-        userDto.Should().BeEquivalentTo(user);
+        userDto.Should().NotBeNull();
+        userDto!.Should()
+            .BeEquivalentTo(new UserDto(user.Username, user.UserType, user.Description, user.RegistrationTime));
     }
 
     [Theory, AutoData]
@@ -65,14 +67,15 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         userDto.Should().BeNull();
     }
 
-    [Theory, AutoData]
+    [Theory, CustomAutoData]
     public async Task GetUsersAsync_ShouldReturnAllMatching(List<User> users)
     {
         await DbContext.Users.ExecuteDeleteAsync();
         DbContext.AddRange(users);
         await DbContext.SaveChangesAsync();
 
-        var expectedDtos = users.Select(UserService.MapToUserDto);
+        var expectedDtos = users.Select(user =>
+            new UserDto(user.Username, user.UserType, user.Description, user.RegistrationTime));
         var actualDtos = await Service.GetUsersAsync(1, 10);
         expectedDtos.Should().BeEquivalentTo(actualDtos);
     }
