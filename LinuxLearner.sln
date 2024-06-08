@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinuxLearner.Routes", "Linu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinuxLearner.IntegrationTests", "LinuxLearner.IntegrationTests\LinuxLearner.IntegrationTests.csproj", "{2F1484FA-EBA4-4D54-B3FF-E8CC6944D8A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinuxLearner.UnitTests", "LinuxLearner.UnitTests\LinuxLearner.UnitTests.csproj", "{7A42E040-9C34-4675-9F62-126519D7D16D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{2F1484FA-EBA4-4D54-B3FF-E8CC6944D8A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F1484FA-EBA4-4D54-B3FF-E8CC6944D8A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F1484FA-EBA4-4D54-B3FF-E8CC6944D8A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A42E040-9C34-4675-9F62-126519D7D16D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A42E040-9C34-4675-9F62-126519D7D16D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A42E040-9C34-4675-9F62-126519D7D16D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A42E040-9C34-4675-9F62-126519D7D16D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
