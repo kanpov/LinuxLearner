@@ -65,6 +65,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<CourseService>();
 
 builder.Services.AddScoped<IValidator<UserPatchDto>, UserPatchDtoValidator>();
+builder.Services.AddScoped<IValidator<CourseCreateDto>, CourseCreateDtoValidator>();
 // serialization
 builder.Services.ConfigureHttpJsonOptions(options =>
 {

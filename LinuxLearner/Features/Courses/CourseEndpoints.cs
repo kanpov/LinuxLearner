@@ -1,3 +1,5 @@
+using FluentValidation;
+using LinuxLearner.Utilities;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LinuxLearner.Features.Courses;
@@ -13,9 +15,13 @@ public static class CourseEndpoints
             .WithName(nameof(GetCourse));
     }
 
-    private static async Task<Results<ForbidHttpResult, CreatedAtRoute<CourseDto>>> CreateCourse(
-        CourseService courseService, CourseCreateDto courseCreateDto)
+    private static async Task<Results<ValidationProblem, CreatedAtRoute<CourseDto>>> CreateCourse(
+        CourseService courseService, CourseCreateDto courseCreateDto,
+        IValidator<CourseCreateDto> validator, HttpContext httpContext)
     {
+        var validationResult = await validator.ValidateAsync(courseCreateDto);
+        if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
+        
         var courseDto = await courseService.CreateCourseAsync(courseCreateDto);
         return TypedResults.CreatedAtRoute(courseDto, nameof(GetCourse), new { id = courseDto.Id });
     }
