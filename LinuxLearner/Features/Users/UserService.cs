@@ -25,7 +25,7 @@ public class UserService(UserRepository userRepository)
     public async Task DeleteAuthorizedUserAsync(HttpContext httpContext)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
-        await userRepository.DeleteUserAsync(user.Username);
+        await userRepository.DeleteUserAsync(user.Name);
     }
 
     public async Task<UserDto?> GetUserAsync(string username)
@@ -56,7 +56,7 @@ public class UserService(UserRepository userRepository)
 
         var newUser = new User
         {
-            Username = username,
+            Name = username,
             UserType = userType,
             Description = null,
             RegistrationTime = DateTimeOffset.UtcNow
@@ -67,7 +67,7 @@ public class UserService(UserRepository userRepository)
     }
 
     private static UserDto MapToUserDto(User user) =>
-        new(user.Username, user.UserType, user.Description, user.RegistrationTime);
+        new(user.Name, user.UserType, user.Description, user.RegistrationTime);
 
     private static void ProjectUserPatchDto(User user, UserPatchDto userPatchDto)
     {

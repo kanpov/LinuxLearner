@@ -44,7 +44,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         var initialDto = await Service.GetAuthorizedUserAsync(httpContext);
         await Service.DeleteAuthorizedUserAsync(httpContext);
 
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Username == initialDto.Username);
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == initialDto.Username);
         user.Should().BeNull();
     }
 
@@ -54,10 +54,10 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         DbContext.Add(user);
         await DbContext.SaveChangesAsync();
 
-        var userDto = await Service.GetUserAsync(user.Username);
+        var userDto = await Service.GetUserAsync(user.Name);
         userDto.Should().NotBeNull();
         userDto!.Should()
-            .BeEquivalentTo(new UserDto(user.Username, user.UserType, user.Description, user.RegistrationTime));
+            .BeEquivalentTo(new UserDto(user.Name, user.UserType, user.Description, user.RegistrationTime));
     }
 
     [Theory, AutoData]
@@ -75,14 +75,14 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         await DbContext.SaveChangesAsync();
 
         var expectedDtos = users.Select(user =>
-            new UserDto(user.Username, user.UserType, user.Description, user.RegistrationTime));
+            new UserDto(user.Name, user.UserType, user.Description, user.RegistrationTime));
         var actualDtos = await Service.GetUsersAsync(1, 10);
         expectedDtos.Should().BeEquivalentTo(actualDtos);
     }
 
     private async Task AssertUserExistenceAsync(UserDto userDto)
     {
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Username == userDto.Username);
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Username);
         user.Should().NotBeNull();
         user.Should().BeEquivalentTo(userDto);
     }

@@ -29,14 +29,14 @@ namespace LinuxLearner.Database.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Username = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
                     UserType = table.Column<int>(type: "integer", nullable: false),
                     Description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     RegistrationTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Username);
+                    table.PrimaryKey("PK_Users", x => x.Name);
                 });
 
             migrationBuilder.CreateTable(
@@ -64,11 +64,11 @@ namespace LinuxLearner.Database.Migrations
                 columns: table => new
                 {
                     CoursesId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UsersUsername = table.Column<string>(type: "text", nullable: false)
+                    UsersName = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CourseUser", x => new { x.CoursesId, x.UsersUsername });
+                    table.PrimaryKey("PK_CourseUser", x => new { x.CoursesId, x.UsersName });
                     table.ForeignKey(
                         name: "FK_CourseUser_Courses_CoursesId",
                         column: x => x.CoursesId,
@@ -76,10 +76,10 @@ namespace LinuxLearner.Database.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_CourseUser_Users_UsersUsername",
-                        column: x => x.UsersUsername,
+                        name: "FK_CourseUser_Users_UsersName",
+                        column: x => x.UsersName,
                         principalTable: "Users",
-                        principalColumn: "Username",
+                        principalColumn: "Name",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -89,9 +89,9 @@ namespace LinuxLearner.Database.Migrations
                 column: "CourseId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CourseUser_UsersUsername",
+                name: "IX_CourseUser_UsersName",
                 table: "CourseUser",
-                column: "UsersUsername");
+                column: "UsersName");
         }
 
         /// <inheritdoc />

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LinuxLearner.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240608113659_Initial")]
+    [Migration("20240608150352_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -30,12 +30,12 @@ namespace LinuxLearner.Database.Migrations
                     b.Property<Guid>("CoursesId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("UsersUsername")
+                    b.Property<string>("UsersName")
                         .HasColumnType("text");
 
-                    b.HasKey("CoursesId", "UsersUsername");
+                    b.HasKey("CoursesId", "UsersName");
 
-                    b.HasIndex("UsersUsername");
+                    b.HasIndex("UsersName");
 
                     b.ToTable("CourseUser");
                 });
@@ -85,7 +85,7 @@ namespace LinuxLearner.Database.Migrations
 
             modelBuilder.Entity("LinuxLearner.Domain.User", b =>
                 {
-                    b.Property<string>("Username")
+                    b.Property<string>("Name")
                         .HasColumnType("text");
 
                     b.Property<string>("Description")
@@ -98,7 +98,7 @@ namespace LinuxLearner.Database.Migrations
                     b.Property<int>("UserType")
                         .HasColumnType("integer");
 
-                    b.HasKey("Username");
+                    b.HasKey("Name");
 
                     b.ToTable("Users", (string)null);
                 });
@@ -113,7 +113,7 @@ namespace LinuxLearner.Database.Migrations
 
                     b.HasOne("LinuxLearner.Domain.User", null)
                         .WithMany()
-                        .HasForeignKey("UsersUsername")
+                        .HasForeignKey("UsersName")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -2,7 +2,7 @@ namespace LinuxLearner.Domain;
 
 public class User
 {
-    public string Username { get; set; } = null!;
+    public string Name { get; set; } = null!;
     
     public UserType UserType { get; set; } = UserType.Student;
     
