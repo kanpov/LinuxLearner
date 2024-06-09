@@ -23,3 +23,8 @@ Content-Type: application/json
 {
   "description": "new fancy desc"
 }
+###
+
+// Delete course
+DELETE {{api}}/courses/cc3d9933-6e1a-4347-b69d-0229c4da4eee
+Authorization: Bearer {{teacher-token}}

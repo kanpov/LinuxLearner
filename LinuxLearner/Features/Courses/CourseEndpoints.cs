@@ -14,6 +14,9 @@ public static class CourseEndpoints
         builder.MapPatch("/courses/{id:guid}", PatchCourse)
             .RequireAuthorization("teacher");
 
+        builder.MapDelete("/courses/{id:guid}", DeleteCourse)
+            .RequireAuthorization("teacher");
+
         builder.MapGet("/courses/{id:guid}", GetCourse)
             .WithName(nameof(GetCourse));
     }
@@ -37,6 +40,13 @@ public static class CourseEndpoints
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
 
         var success = await courseService.PatchCourseAsync(httpContext, id, coursePatchDto);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<NotFound, NoContent>> DeleteCourse(CourseService courseService, Guid id,
+        HttpContext httpContext)
+    {
+        var success = await courseService.DeleteCourseAsync(httpContext, id);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 

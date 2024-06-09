@@ -30,15 +30,32 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
 
     public async Task<bool> PatchCourseAsync(HttpContext httpContext, Guid courseId, CoursePatchDto coursePatchDto)
     {
-        var user = await userService.GetAuthorizedUserAsync(httpContext);
-        var courseUser = await courseRepository.GetCourseUserAsync(courseId, user.Name);
-        if (courseUser is not { IsCourseAdministrator: true }) return false;
-
-        var course = courseUser.Course;
+        var course = await GetAdministeredCourseAsync(httpContext, courseId);
+        if (course is null) return false;
+        
         ProjectCoursePatchDto(course, coursePatchDto);
         await courseRepository.UpdateCourseAsync(course);
 
         return true;
+    }
+
+    public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
+    {
+        var course = await GetAdministeredCourseAsync(httpContext, courseId);
+        if (course is null) return false;
+
+        await courseRepository.DeleteCourseAsync(courseId);
+        return true;
+    }
+
+    private async Task<Course?> GetAdministeredCourseAsync(HttpContext httpContext, Guid courseId)
+    {
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var courseUser = await courseRepository.GetCourseUserAsync(courseId, user.Name);
+        
+        return courseUser is not { IsCourseAdministrator: true }
+            ? null
+            : courseUser.Course;
     }
     
     private static CourseDto MapToCourseDto(Course course) =>

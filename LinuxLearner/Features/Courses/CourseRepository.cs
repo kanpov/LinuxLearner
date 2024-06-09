@@ -48,4 +48,12 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/courses/{course.Id}", course);
     }
+
+    public async Task DeleteCourseAsync(Guid courseId)
+    {
+        await dbContext.Courses
+            .Where(c => c.Id == courseId)
+            .ExecuteDeleteAsync();
+        await fusionCache.RemoveAsync($"/courses/{courseId}");
+    }
 }
