@@ -33,3 +33,8 @@ Authorization: Bearer {{teacher-token}}
 // Grant or revoke administration
 PUT {{api}}/courses/f671467b-a6a9-4efe-b17d-d9dfe973977f/administration/revoke/anotherteacher
 Authorization: Bearer {{teacher-token}}
+###
+
+// Get course participation
+GET {{api}}/courses/f671467b-a6a9-4efe-b17d-d9dfe973977f/participation/anotherteacher
+Authorization: Bearer {{student-token}}

@@ -63,6 +63,12 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
         return true;
     }
 
+    public async Task<CourseUserDto?> GetCourseUserAsync(Guid courseId, string userName)
+    {
+        var courseUser = await courseRepository.GetCourseUserAsync(courseId, userName);
+        return courseUser is null ? null : MapToCourseUserDto(courseUser);
+    }
+
     private async Task<CourseUser?> GetAdministrativeCourseUserAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
@@ -70,6 +76,10 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
 
         return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
     }
+
+    private static CourseUserDto MapToCourseUserDto(CourseUser courseUser) =>
+        new(MapToCourseDto(courseUser.Course), UserService.MapToUserDto(courseUser.User),
+            courseUser.IsCourseAdministrator, courseUser.JoinTime);
     
     private static CourseDto MapToCourseDto(Course course) =>
         new(course.Id, course.Name, course.Description, course.AcceptanceMode);

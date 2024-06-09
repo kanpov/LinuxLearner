@@ -25,6 +25,8 @@ public static class CourseEndpoints
 
         builder.MapGet("/courses/{id:guid}", GetCourse)
             .WithName(nameof(GetCourse));
+
+        builder.MapGet("/courses/{id:guid}/participation/{username}", GetCourseUser);
     }
 
     private static async Task<Results<ValidationProblem, CreatedAtRoute<CourseDto>>> CreateCourse(
@@ -80,5 +82,12 @@ public static class CourseEndpoints
         var courseDto = await courseService.GetCourseAsync(id);
         if (courseDto is null) return TypedResults.NotFound();
         return TypedResults.Ok(courseDto);
+    }
+
+    private static async Task<Results<NotFound, Ok<CourseUserDto>>> GetCourseUser(
+        CourseService courseService, Guid id, string username)
+    {
+        var courseUserDto = await courseService.GetCourseUserAsync(id, username);
+        return courseUserDto is null ? TypedResults.NotFound() : TypedResults.Ok(courseUserDto);
     }
 }

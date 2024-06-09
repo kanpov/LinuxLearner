@@ -66,7 +66,7 @@ public class UserService(UserRepository userRepository)
         return newUser;
     }
 
-    private static UserDto MapToUserDto(User user) =>
+    public static UserDto MapToUserDto(User user) =>
         new(user.Name, user.UserType, user.Description, user.RegistrationTime);
 
     private static void ProjectUserPatchDto(User user, UserPatchDto userPatchDto)
