@@ -3,5 +3,6 @@ namespace LinuxLearner.Domain;
 public enum UserType
 {
     Student,
-    Teacher
+    Teacher,
+    Admin
 }

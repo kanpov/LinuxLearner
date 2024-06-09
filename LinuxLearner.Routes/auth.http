@@ -30,3 +30,14 @@ grant_type=password&client_id={{keycloak-client-id}}&client_secret={{keycloak-cl
     client.global.set("another-teacher-token", response.body["access_token"]);
 %}
 ###
+
+# Obtain token for admin
+POST {{keycloak}}/realms/master/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id={{keycloak-client-id}}&client_secret={{keycloak-client-secret}}&username={{keycloak-admin-userpass}}&password={{keycloak-admin-userpass}}
+
+> {%
+    client.global.set("admin-token", response.body["access_token"]);
+%}
+###

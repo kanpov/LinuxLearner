@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using Keycloak.AuthServices.Authentication;
 using Keycloak.AuthServices.Authorization;
+using Keycloak.AuthServices.Common;
+using Keycloak.AuthServices.Sdk;
 using LinuxLearner.Database;
 using LinuxLearner.Features.Courses;
 using LinuxLearner.Features.Users;
@@ -41,6 +43,11 @@ builder.Services.AddAuthorization(options =>
     {
         policy.RequireResourceRoles("teacher");
     });
+    
+    options.AddPolicy("admin", policy =>
+    {
+        policy.RequireResourceRoles("admin");
+    });
 }).AddKeycloakAuthorization(builder.Configuration);
 // caching
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -72,6 +79,21 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+// admin API
+builder.Services
+    .AddClientCredentialsTokenManagement()
+    .AddClient(
+        "admin-api",
+        client =>
+        {
+            var options = builder.Configuration.GetKeycloakOptions<KeycloakAdminClientOptions>("KeycloakAdmin")!;
+            client.ClientId = options.Resource;
+            client.ClientSecret = options.Credentials.Secret;
+            client.TokenEndpoint = options.KeycloakTokenEndpoint;
+        });
+builder.Services
+    .AddKeycloakAdminHttpClient(builder.Configuration.GetRequiredSection("KeycloakAdmin"))
+    .AddClientCredentialsTokenHandler("admin-api");
 
 var app = builder.Build();
 

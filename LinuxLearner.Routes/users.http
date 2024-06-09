@@ -26,3 +26,8 @@ Authorization: Bearer {{student-token}}
 // Get all users paged
 GET {{api}}/users
 Authorization: Bearer {{student-token}}
+###
+
+// Elevate user
+PUT {{api}}/users/samplestudent/elevate
+Authorization: Bearer {{teacher-token}}
