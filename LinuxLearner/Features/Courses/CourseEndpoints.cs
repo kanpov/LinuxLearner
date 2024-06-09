@@ -17,18 +17,18 @@ public static class CourseEndpoints
         builder.MapDelete("/courses/{id:guid}", DeleteCourse)
             .RequireAuthorization("teacher");
 
-        builder.MapPut("/courses/{id:guid}/administration/grant/{username}", GrantCourseAdministration)
-            .RequireAuthorization("teacher");
-
-        builder.MapPut("/courses/{id:guid}/administration/revoke/{username}", RevokeCourseAdministration)
-            .RequireAuthorization("teacher");
-
         builder.MapGet("/courses/{id:guid}", GetCourse)
             .WithName(nameof(GetCourse));
 
         builder.MapGet("/courses/{id:guid}/participations/{username}", GetParticipation);
 
         builder.MapGet("/courses/{id:guid}/participations", GetParticipations);
+        
+        builder.MapPut("/courses/{id:guid}/participations/{username}/administration/grant", GrantCourseAdministration)
+            .RequireAuthorization("teacher");
+
+        builder.MapPut("/courses/{id:guid}/participations/{username}/administration/revoke", RevokeCourseAdministration)
+            .RequireAuthorization("teacher");
     }
 
     private static async Task<Results<ValidationProblem, CreatedAtRoute<CourseDto>>> CreateCourse(
