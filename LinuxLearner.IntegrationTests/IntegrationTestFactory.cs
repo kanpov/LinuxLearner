@@ -49,7 +49,10 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
 
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseNpgsql(PostgresContainer.GetConnectionString());
+                options.UseNpgsql(PostgresContainer.GetConnectionString(), npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure();
+                });
             });
 
             services.AddStackExchangeRedisCache(options =>
