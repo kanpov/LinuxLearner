@@ -16,6 +16,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.Description).HasMaxLength(200);
 
+        builder.HasMany(u => u.Courses)
+            .WithMany(c => c.Users)
+            .UsingEntity<CourseUser>(cu =>
+            {
+                cu.Property(j => j.IsCourseAdministrator).IsRequired();
+                cu.Property(j => j.JoinTime).IsRequired();
+
+                cu.ToTable("CourseUsers");
+            });
+
         builder.ToTable("Users");
     }
 }

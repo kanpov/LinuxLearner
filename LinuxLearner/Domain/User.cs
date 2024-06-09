@@ -10,5 +10,6 @@ public class User
 
     public DateTimeOffset RegistrationTime { get; set; } = DateTimeOffset.UtcNow;
 
+    public List<CourseUser> CourseUsers { get; set; } = [];
     public List<Course> Courses { get; set; } = [];
 }

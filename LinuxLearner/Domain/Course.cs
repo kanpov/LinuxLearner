@@ -7,6 +7,7 @@ public class Course
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public AcceptanceMode AcceptanceMode { get; set; } = AcceptanceMode.NoInviteRequired;
-    
+
+    public List<CourseUser> CourseUsers { get; set; } = [];
     public List<User> Users { get; set; } = [];
 }

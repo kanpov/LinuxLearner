@@ -1,13 +1,24 @@
 using LinuxLearner.Domain;
+using LinuxLearner.Features.Users;
 
 namespace LinuxLearner.Features.Courses;
 
-public class CourseService(CourseRepository courseRepository)
+public class CourseService(CourseRepository courseRepository, UserService userService)
 {
-    public async Task<CourseDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
+    public async Task<CourseDto> CreateCourseAsync(HttpContext httpContext, CourseCreateDto courseCreateDto)
     {
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
         var course = MapToCourse(courseCreateDto);
         await courseRepository.AddCourseAsync(course);
+
+        await courseRepository.AddCourseUserAsync(new CourseUser
+        {
+            CourseId = course.Id,
+            UserName = user.Name,
+            IsCourseAdministrator = true,
+            JoinTime = DateTimeOffset.UtcNow
+        });
+        
         return MapToCourseDto(course);
     }
 
@@ -17,11 +28,13 @@ public class CourseService(CourseRepository courseRepository)
         return course is null ? null : MapToCourseDto(course);
     }
 
-    public async Task<bool> PatchCourseAsync(Guid id, CoursePatchDto coursePatchDto)
+    public async Task<bool> PatchCourseAsync(HttpContext httpContext, Guid courseId, CoursePatchDto coursePatchDto)
     {
-        var course = await courseRepository.GetCourseAsync(id);
-        if (course is null) return false;
-        
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var courseUser = await courseRepository.GetCourseUserAsync(courseId, user.Name);
+        if (courseUser is not { IsCourseAdministrator: true }) return false;
+
+        var course = courseUser.Course;
         ProjectCoursePatchDto(course, coursePatchDto);
         await courseRepository.UpdateCourseAsync(course);
 

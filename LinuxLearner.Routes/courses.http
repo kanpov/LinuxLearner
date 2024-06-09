@@ -11,13 +11,13 @@ Content-Type: application/json
 ###
 
 // Retrieve course
-GET {{api}}/courses/76714d98-4498-4200-a278-1a0f48e524e5
+GET {{api}}/courses/cc3d9933-6e1a-4347-b69d-0229c4da4eee
 Authorization: Bearer {{student-token}}
 ###
 
 // Partially modify course
-PATCH {{api}}/courses/76714d98-4498-4200-a278-1a0f48e524e6
-Authorization: Bearer {{teacher-token}}
+PATCH {{api}}/courses/cc3d9933-6e1a-4347-b69d-0229c4da4eee
+Authorization: Bearer {{student-token}}
 Content-Type: application/json
 
 {

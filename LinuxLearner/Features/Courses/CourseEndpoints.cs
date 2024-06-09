@@ -24,8 +24,8 @@ public static class CourseEndpoints
     {
         var validationResult = await validator.ValidateAsync(courseCreateDto);
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
-        
-        var courseDto = await courseService.CreateCourseAsync(courseCreateDto);
+
+        var courseDto = await courseService.CreateCourseAsync(httpContext, courseCreateDto);
         return TypedResults.CreatedAtRoute(courseDto, nameof(GetCourse), new { id = courseDto.Id });
     }
 
@@ -36,7 +36,7 @@ public static class CourseEndpoints
         var validationResult = await validator.ValidateAsync(coursePatchDto);
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
 
-        var success = await courseService.PatchCourseAsync(id, coursePatchDto);
+        var success = await courseService.PatchCourseAsync(httpContext, id, coursePatchDto);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 

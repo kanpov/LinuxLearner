@@ -3,6 +3,7 @@ using System;
 using LinuxLearner.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LinuxLearner.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240609045329_AddExplicitJoinTable")]
+    partial class AddExplicitJoinTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,7 +86,7 @@ namespace LinuxLearner.Database.Migrations
 
                     b.HasIndex("UserName");
 
-                    b.ToTable("CourseUsers", (string)null);
+                    b.ToTable("CourseUser");
                 });
 
             modelBuilder.Entity("LinuxLearner.Domain.User", b =>
