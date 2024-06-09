@@ -10,9 +10,9 @@ public class CustomAutoDataAttribute() : AutoDataAttribute(() =>
     
     // avoid circular dependencies in a many-to-many relationship
     fixture.Customize<User>(u =>
-        u.Without(x => x.Courses));
+        u.Without(x => x.Courses).Without(x => x.CourseUsers));
     fixture.Customize<Course>(c =>
-        c.Without(x => x.Users));
+        c.Without(x => x.Users).Without(x => x.CourseUsers));
     
     return fixture;
 });
