@@ -59,7 +59,7 @@ public class UserService(
         var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
         var realmId = metadataOptions["Realm"]!;
         
-        if (receiverUser is null || senderUser.UserType < receiverUser.UserType) return false;
+        if (receiverUser is null || senderUser.UserType <= receiverUser.UserType) return false;
         if (demote && receiverUser.UserType == UserType.Student) return false;
         if (!demote && receiverUser.UserType == UserType.Admin) return false;
 
