@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LinuxLearner.Domain;
 
 public class Course
@@ -8,6 +10,6 @@ public class Course
     public string? Description { get; set; } = string.Empty;
     public AcceptanceMode AcceptanceMode { get; set; } = AcceptanceMode.NoInviteRequired;
 
-    public List<CourseParticipation> CourseUsers { get; set; } = [];
-    public List<User> Users { get; set; } = [];
+    [JsonIgnore] public List<CourseParticipation> CourseUsers { get; set; } = [];
+    [JsonIgnore] public List<User> Users { get; set; } = [];
 }

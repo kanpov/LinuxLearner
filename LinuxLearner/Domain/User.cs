@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LinuxLearner.Domain;
 
 public class User
@@ -10,6 +12,6 @@ public class User
 
     public DateTimeOffset RegistrationTime { get; set; } = DateTimeOffset.UtcNow;
 
-    public List<CourseParticipation> CourseUsers { get; set; } = [];
-    public List<Course> Courses { get; set; } = [];
+    [JsonIgnore] public List<CourseParticipation> CourseUsers { get; set; } = [];
+    [JsonIgnore] public List<Course> Courses { get; set; } = [];
 }

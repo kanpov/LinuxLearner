@@ -31,6 +31,7 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         {
             UserType.Student => MakeContext("student"),
             UserType.Teacher => MakeContext("teacher"),
+            UserType.Admin => MakeContext("admin"),
             _ => throw new ArgumentOutOfRangeException(nameof(userType), userType, null)
         };
     }
