@@ -11,7 +11,7 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
         var course = MapToCourse(courseCreateDto);
         await courseRepository.AddCourseAsync(course);
 
-        await courseRepository.AddCourseUserAsync(new CourseUser
+        await courseRepository.AddParticipationAsync(new CourseParticipation
         {
             CourseId = course.Id,
             UserName = user.Name,
@@ -30,7 +30,7 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
 
     public async Task<bool> PatchCourseAsync(HttpContext httpContext, Guid courseId, CoursePatchDto coursePatchDto)
     {
-        var courseUser = await GetAdministrativeCourseUserAsync(httpContext, courseId);
+        var courseUser = await GetAdministrativeParticipationAsync(httpContext, courseId);
         if (courseUser is null) return false;
         
         ProjectCoursePatchDto(courseUser.Course, coursePatchDto);
@@ -40,7 +40,7 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
 
     public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
     {
-        var courseUser = await GetAdministrativeCourseUserAsync(httpContext, courseId);
+        var courseUser = await GetAdministrativeParticipationAsync(httpContext, courseId);
         if (courseUser is null) return false;
 
         await courseRepository.DeleteCourseAsync(courseId);
@@ -50,36 +50,46 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
     public async Task<bool> ChangeAdministrationOnCourseAsync(
         HttpContext httpContext, Guid courseId, string userName, bool isCourseAdministrator)
     {
-        var grantorCourseUser = await GetAdministrativeCourseUserAsync(httpContext, courseId);
-        if (grantorCourseUser is null) return false;
+        var grantor = await GetAdministrativeParticipationAsync(httpContext, courseId);
+        if (grantor is null) return false;
 
-        var granteeCourseUser = await courseRepository.GetCourseUserAsync(courseId, userName);
-        if (granteeCourseUser is not { User.UserType: UserType.Teacher }
-            || granteeCourseUser.UserName == grantorCourseUser.UserName) return false;
+        var grantee = await courseRepository.GetParticipationAsync(courseId, userName);
+        if (grantee is not { User.UserType: UserType.Teacher }
+            || grantee.UserName == grantor.UserName) return false;
 
-        granteeCourseUser.IsCourseAdministrator = isCourseAdministrator;
-        await courseRepository.UpdateCourseUserAsync(granteeCourseUser);
+        grantee.IsCourseAdministrator = isCourseAdministrator;
+        await courseRepository.UpdateParticipationAsync(grantee);
         
         return true;
     }
 
-    public async Task<CourseUserDto?> GetCourseUserAsync(Guid courseId, string userName)
+    public async Task<CourseParticipationDto?> GetParticipationAsync(Guid courseId, string userName)
     {
-        var courseUser = await courseRepository.GetCourseUserAsync(courseId, userName);
-        return courseUser is null ? null : MapToCourseUserDto(courseUser);
+        var participation = await courseRepository.GetParticipationAsync(courseId, userName);
+        return participation is null ? null : MapToCourseParticipationDto(participation);
     }
 
-    private async Task<CourseUser?> GetAdministrativeCourseUserAsync(HttpContext httpContext, Guid courseId)
+    public async Task<IEnumerable<CourseParticipationDto>?> GetParticipationsAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
-        var courseUser = await courseRepository.GetCourseUserAsync(courseId, user.Name);
+        var participationOfSelf = await courseRepository.GetParticipationAsync(courseId, user.Name);
+        if (participationOfSelf is null) return null;
+
+        var participations = await courseRepository.GetParticipationsAsync(courseId);
+        return participations.Select(MapToCourseParticipationDto);
+    }
+
+    private async Task<CourseParticipation?> GetAdministrativeParticipationAsync(HttpContext httpContext, Guid courseId)
+    {
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var courseUser = await courseRepository.GetParticipationAsync(courseId, user.Name);
 
         return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
     }
 
-    private static CourseUserDto MapToCourseUserDto(CourseUser courseUser) =>
-        new(MapToCourseDto(courseUser.Course), UserService.MapToUserDto(courseUser.User),
-            courseUser.IsCourseAdministrator, courseUser.JoinTime);
+    private static CourseParticipationDto MapToCourseParticipationDto(CourseParticipation courseParticipation) =>
+        new(MapToCourseDto(courseParticipation.Course), UserService.MapToUserDto(courseParticipation.User),
+            courseParticipation.IsCourseAdministrator, courseParticipation.JoinTime);
     
     private static CourseDto MapToCourseDto(Course course) =>
         new(course.Id, course.Name, course.Description, course.AcceptanceMode);

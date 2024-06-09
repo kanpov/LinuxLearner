@@ -18,12 +18,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasMany(u => u.Courses)
             .WithMany(c => c.Users)
-            .UsingEntity<CourseUser>(cu =>
+            .UsingEntity<CourseParticipation>(cu =>
             {
                 cu.Property(j => j.IsCourseAdministrator).IsRequired();
                 cu.Property(j => j.JoinTime).IsRequired();
 
-                cu.ToTable("CourseUsers");
+                cu.ToTable("CourseParticipations");
             });
 
         builder.ToTable("Users");

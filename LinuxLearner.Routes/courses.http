@@ -36,5 +36,10 @@ Authorization: Bearer {{teacher-token}}
 ###
 
 // Get course participation
-GET {{api}}/courses/f671467b-a6a9-4efe-b17d-d9dfe973977f/participation/anotherteacher
+GET {{api}}/courses/f671467b-a6a9-4efe-b17d-d9dfe973977f/participations/anotherteacher
 Authorization: Bearer {{student-token}}
+###
+
+// Get all course participations
+GET {{api}}/courses/1384e5ab-32b1-4d6b-b45a-1df19b824c2c/participations/
+Authorization: Bearer {{teacher-token}}

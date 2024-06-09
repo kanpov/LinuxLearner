@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace LinuxLearner.Domain;
 
-public class CourseUser
+public class CourseParticipation
 {
     public string UserName { get; set; }
     public Guid CourseId { get; set; }

@@ -9,7 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Course> Courses { get; set; } = null!;
-    public DbSet<CourseUser> CourseUsers => Set<CourseUser>();
+    public DbSet<CourseParticipation> CourseParticipations => Set<CourseParticipation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

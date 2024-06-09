@@ -7,36 +7,52 @@ namespace LinuxLearner.Features.Courses;
 
 public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
-    public async Task<CourseUser?> GetCourseUserAsync(Guid courseId, string userName)
+    public async Task<CourseParticipation?> GetParticipationAsync(Guid courseId, string userName)
     {
-        return await fusionCache.GetOrSetAsync<CourseUser?>(
-            $"/course-user/{courseId}/{userName}",
+        return await fusionCache.GetOrSetAsync<CourseParticipation?>(
+            $"/course-participation/{courseId}/{userName}",
             async token =>
             {
-                return await dbContext.CourseUsers
-                    .Where(cu => cu.CourseId == courseId && cu.UserName == userName)
-                    .Include(cu => cu.Course)
-                    .Include(cu => cu.User)
+                return await dbContext.CourseParticipations
+                    .Where(p => p.CourseId == courseId && p.UserName == userName)
+                    .Include(p => p.Course)
+                    .Include(p => p.User)
                     .FirstOrDefaultAsync(token);
             });
     }
 
-    public async Task AddCourseUserAsync(CourseUser courseUser)
+    public async Task<IEnumerable<CourseParticipation>> GetParticipationsAsync(Guid courseId)
     {
-        dbContext.Add(courseUser);
-        await UpdateCourseUserAsync(courseUser);
+        return await fusionCache.GetOrSetAsync<IEnumerable<CourseParticipation>>(
+            $"/course-participation/{courseId}",
+            async token =>
+            {
+                return await dbContext.CourseParticipations
+                    .Where(p => p.CourseId == courseId)
+                    .Include(p => p.Course)
+                    .Include(p => p.User)
+                    .ToListAsync(token);
+            });
     }
 
-    public async Task UpdateCourseUserAsync(CourseUser courseUser)
+    public async Task AddParticipationAsync(CourseParticipation courseParticipation)
+    {
+        dbContext.Add(courseParticipation);
+        await UpdateParticipationAsync(courseParticipation);
+    }
+
+    public async Task UpdateParticipationAsync(CourseParticipation courseParticipation)
     {
         await dbContext.SaveChangesAsync();
-        await fusionCache.SetAsync($"/course-user/{courseUser.CourseId}/{courseUser.UserName}", courseUser);
+        await fusionCache.SetAsync(
+            $"/course-participation/{courseParticipation.CourseId}/{courseParticipation.UserName}", courseParticipation);
+        await fusionCache.RemoveAsync($"/course-participation/{courseParticipation.CourseId}");
     }
     
     public async Task<Course?> GetCourseAsync(Guid id)
     {
         return await fusionCache.GetOrSetAsync<Course?>(
-            $"/courses/{id}",
+            $"/course/{id}",
             async token =>
             {
                 return await dbContext.Courses.FirstOrDefaultAsync(c => c.Id == id, token);
@@ -52,7 +68,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
     public async Task UpdateCourseAsync(Course course)
     {
         await dbContext.SaveChangesAsync();
-        await fusionCache.SetAsync($"/courses/{course.Id}", course);
+        await fusionCache.SetAsync($"/course/{course.Id}", course);
     }
 
     public async Task DeleteCourseAsync(Guid courseId)
@@ -60,6 +76,6 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         await dbContext.Courses
             .Where(c => c.Id == courseId)
             .ExecuteDeleteAsync();
-        await fusionCache.RemoveAsync($"/courses/{courseId}");
+        await fusionCache.RemoveAsync($"/course/{courseId}");
     }
 }

@@ -10,7 +10,7 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
     public async Task<User?> GetUserAsync(string username)
     {
         return await fusionCache.GetOrSetAsync<User?>(
-            $"/users/{username}",
+            $"/user/{username}",
             async token =>
             {
                 return await dbContext.Users.FirstOrDefaultAsync(u => u.Name == username, token);
@@ -27,7 +27,7 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
     {
         await dbContext.SaveChangesAsync();
         
-        await fusionCache.SetAsync($"/users/{user.Name}", user);
+        await fusionCache.SetAsync($"/user/{user.Name}", user);
     }
 
     public async Task DeleteUserAsync(string username)
@@ -36,7 +36,7 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
             .Where(u => u.Name == username)
             .ExecuteDeleteAsync();
 
-        await fusionCache.RemoveAsync($"/users/{username}");
+        await fusionCache.RemoveAsync($"/user/{username}");
     }
 
     public async Task<IEnumerable<User>> GetUsersAsync(int page, int pageSize)
