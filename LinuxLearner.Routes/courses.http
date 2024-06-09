@@ -41,5 +41,5 @@ Authorization: Bearer {{student-token}}
 ###
 
 // Get all course participations
-GET {{api}}/courses/1384e5ab-32b1-4d6b-b45a-1df19b824c2c/participations/
+GET {{api}}/participations/user/sampleteacher
 Authorization: Bearer {{teacher-token}}

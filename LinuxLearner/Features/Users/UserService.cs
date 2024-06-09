@@ -63,7 +63,7 @@ public class UserService(
         if (demote && receiverUser.UserType == UserType.Student) return false;
         if (!demote && receiverUser.UserType == UserType.Admin) return false;
 
-        var oldGroupId = await GetKeycloakGroupId(receiverUser.UserType, realmId, metadataOptions);
+        var oldUserType = receiverUser.UserType;
 
         if (demote)
         {
@@ -88,7 +88,12 @@ public class UserService(
         var userId = await GetKeycloakUserId(receiverUser.Name, realmId);
         
         await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
-        await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
+        
+        if (demote)
+        {
+            var oldGroupId = await GetKeycloakGroupId(oldUserType, realmId, metadataOptions);
+            await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
+        }
 
         return true;
     }

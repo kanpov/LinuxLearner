@@ -20,14 +20,16 @@ public static class CourseEndpoints
         builder.MapGet("/courses/{id:guid}", GetCourse)
             .WithName(nameof(GetCourse));
 
-        builder.MapGet("/courses/{id:guid}/participations/{username}", GetParticipation);
+        builder.MapGet("/participations/course/{id:guid}/user/{username}", GetParticipation);
 
-        builder.MapGet("/courses/{id:guid}/participations", GetParticipations);
+        builder.MapGet("/participations/course/{id:guid}", GetParticipationsForCourse);
+
+        builder.MapGet("/participations/user/{username}", GetParticipationsForUser);
         
-        builder.MapPut("/courses/{id:guid}/participations/{username}/administration/grant", GrantCourseAdministration)
+        builder.MapPut("/participations/course/{id:guid}/user/{username}/administration/grant", GrantCourseAdministration)
             .RequireAuthorization("teacher");
 
-        builder.MapPut("/courses/{id:guid}/participations/{username}/administration/revoke", RevokeCourseAdministration)
+        builder.MapPut("/participations/course/{id:guid}/user/{username}/administration/revoke", RevokeCourseAdministration)
             .RequireAuthorization("teacher");
     }
 
@@ -93,10 +95,17 @@ public static class CourseEndpoints
         return courseUserDto is null ? TypedResults.NotFound() : TypedResults.Ok(courseUserDto);
     }
 
-    private static async Task<Results<NotFound, Ok<IEnumerable<CourseParticipationDto>>>> GetParticipations(
+    private static async Task<Results<NotFound, Ok<IEnumerable<CourseParticipationDto>>>> GetParticipationsForCourse(
         CourseService courseService, HttpContext httpContext, Guid id)
     {
-        var courseParticipationDtos = await courseService.GetParticipationsAsync(httpContext, id);
+        var courseParticipationDtos = await courseService.GetParticipationsForCourseAsync(httpContext, id);
         return courseParticipationDtos is null ? TypedResults.NotFound() : TypedResults.Ok(courseParticipationDtos);
+    }
+    
+    private static async Task<Ok<IEnumerable<CourseParticipationDto>>> GetParticipationsForUser(
+        CourseService courseService, string username)
+    {
+        var courseParticipationDtos = await courseService.GetParticipationsForUserAsync(username);
+        return TypedResults.Ok(courseParticipationDtos);
     }
 }

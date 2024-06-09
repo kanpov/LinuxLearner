@@ -69,13 +69,19 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
         return participation is null ? null : MapToCourseParticipationDto(participation);
     }
 
-    public async Task<IEnumerable<CourseParticipationDto>?> GetParticipationsAsync(HttpContext httpContext, Guid courseId)
+    public async Task<IEnumerable<CourseParticipationDto>?> GetParticipationsForCourseAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
         var participationOfSelf = await courseRepository.GetParticipationAsync(courseId, user.Name);
         if (participationOfSelf is null) return null;
 
-        var participations = await courseRepository.GetParticipationsAsync(courseId);
+        var participations = await courseRepository.GetParticipationsForCourseAsync(courseId);
+        return participations.Select(MapToCourseParticipationDto);
+    }
+
+    public async Task<IEnumerable<CourseParticipationDto>> GetParticipationsForUserAsync(string username)
+    {
+        var participations = await courseRepository.GetParticipationsForUserAsync(username);
         return participations.Select(MapToCourseParticipationDto);
     }
 

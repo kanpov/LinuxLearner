@@ -14,7 +14,7 @@ public static class UserEndpoints
         
         builder.MapGet("/users/{username}", GetUser);
         builder.MapGet("/users", GetUsers);
-        builder.MapPut("/users/{username}/elevate", ElevateUser);
+        builder.MapPut("/users/{username}/promote", PromoteUser);
         builder.MapPut("/users/{username}/demote", DemoteUser);
     }
 
@@ -55,7 +55,7 @@ public static class UserEndpoints
         return TypedResults.Ok(userDtos);
     }
 
-    private static async Task<Results<ForbidHttpResult, NoContent>> ElevateUser(HttpContext httpContext,
+    private static async Task<Results<ForbidHttpResult, NoContent>> PromoteUser(HttpContext httpContext,
         UserService userService, string username)
     {
         var successful = await userService.ChangeUserRoleAsync(httpContext, username, demote: false);
