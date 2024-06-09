@@ -51,43 +51,57 @@ public class UserService(
         return users.Select(MapToUserDto);
     }
 
-    public async Task<bool> ElevateUserAsync(HttpContext httpContext, string username)
+    public async Task<bool> ChangeUserRoleAsync(HttpContext httpContext, string username, bool demote)
     {
         var senderUser = await GetAuthorizedUserEntityAsync(httpContext);
         var receiverUser = await userRepository.GetUserAsync(username);
-
-        if (receiverUser is null
-            || senderUser.UserType <= receiverUser.UserType
-            || receiverUser.UserType == UserType.Admin) return false;
-
-        receiverUser.UserType = receiverUser.UserType == UserType.Student ? UserType.Teacher : UserType.Admin;
-        await userRepository.UpdateUserAsync(receiverUser);
-
+        
         var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
         var realmId = metadataOptions["Realm"]!;
-
-        var userId = await fusionCache.GetOrSetAsync<string>(
-            $"/keycloak-user-id/{receiverUser.Name}",
-            async token =>
-            {
-                var queriedUsers = await keycloakUserClient.GetUsersAsync(realmId,
-                    new GetUsersRequestParameters
-                    {
-                        Max = 1,
-                        Username = receiverUser.Name,
-                        Exact = true,
-                        BriefRepresentation = true
-                    }, token);
-                return queriedUsers.First().Id!;
-            },
-            new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
         
-        var groupName = receiverUser.UserType switch
+        if (receiverUser is null || senderUser.UserType < receiverUser.UserType) return false;
+        if (demote && receiverUser.UserType == UserType.Student) return false;
+        if (!demote && receiverUser.UserType == UserType.Admin) return false;
+
+        var oldGroupId = await GetKeycloakGroupId(receiverUser.UserType, realmId, metadataOptions);
+
+        if (demote)
         {
+            receiverUser.UserType = receiverUser.UserType switch
+            {
+                UserType.Admin => UserType.Teacher,
+                _ => UserType.Student
+            };
+        }
+        else
+        {
+            receiverUser.UserType = receiverUser.UserType switch
+            {
+                UserType.Student => UserType.Teacher,
+                _ => UserType.Admin
+            };
+        }
+
+        await userRepository.UpdateUserAsync(receiverUser);
+
+        var newGroupId = await GetKeycloakGroupId(receiverUser.UserType, realmId, metadataOptions);
+        var userId = await GetKeycloakUserId(receiverUser.Name, realmId);
+        
+        await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
+        await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
+
+        return true;
+    }
+
+    private async Task<string> GetKeycloakGroupId(UserType userType, string realmId, IConfigurationSection metadataOptions)
+    {
+        var groupName = userType switch
+        {
+            UserType.Student => metadataOptions["StudentGroup"]!,
             UserType.Teacher => metadataOptions["TeacherGroup"]!,
             _ => metadataOptions["AdminGroup"]!
         };
-        var groupId = await fusionCache.GetOrSetAsync<string>(
+        return await fusionCache.GetOrSetAsync<string>(
             $"/keycloak-group-id/{groupName}",
             async token =>
             {
@@ -102,10 +116,25 @@ public class UserService(
                 return queriedGroups.First().Id!;
             },
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
-        
-        await keycloakUserClient.JoinGroupAsync(realmId, userId, groupId);
+    }
 
-        return true;
+    private async Task<string> GetKeycloakUserId(string username, string realmId)
+    {
+        return await fusionCache.GetOrSetAsync<string>(
+            $"/keycloak-user-id/{username}",
+            async token =>
+            {
+                var queriedUsers = await keycloakUserClient.GetUsersAsync(realmId,
+                    new GetUsersRequestParameters
+                    {
+                        Max = 1,
+                        Username = username,
+                        Exact = true,
+                        BriefRepresentation = true
+                    }, token);
+                return queriedUsers.First().Id!;
+            },
+            new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
     private async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
