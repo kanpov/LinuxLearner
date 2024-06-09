@@ -79,7 +79,8 @@ public class UserService(
                         BriefRepresentation = true
                     }, token);
                 return queriedUsers.First().Id!;
-            });
+            },
+            new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
         
         var groupName = receiverUser.UserType switch
         {
@@ -99,7 +100,8 @@ public class UserService(
                         BriefRepresentation = true
                     }, token);
                 return queriedGroups.First().Id!;
-            });
+            },
+            new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
         
         await keycloakUserClient.JoinGroupAsync(realmId, userId, groupId);
 
