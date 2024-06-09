@@ -16,6 +16,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
                 return await dbContext.CourseUsers
                     .Where(cu => cu.CourseId == courseId && cu.UserName == userName)
                     .Include(cu => cu.Course)
+                    .Include(cu => cu.User)
                     .FirstOrDefaultAsync(token);
             });
     }
@@ -23,6 +24,11 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
     public async Task AddCourseUserAsync(CourseUser courseUser)
     {
         dbContext.Add(courseUser);
+        await UpdateCourseUserAsync(courseUser);
+    }
+
+    public async Task UpdateCourseUserAsync(CourseUser courseUser)
+    {
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/course-user/{courseUser.CourseId}/{courseUser.UserName}", courseUser);
     }

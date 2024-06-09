@@ -30,32 +30,45 @@ public class CourseService(CourseRepository courseRepository, UserService userSe
 
     public async Task<bool> PatchCourseAsync(HttpContext httpContext, Guid courseId, CoursePatchDto coursePatchDto)
     {
-        var course = await GetAdministeredCourseAsync(httpContext, courseId);
-        if (course is null) return false;
+        var courseUser = await GetAdministrativeCourseUserAsync(httpContext, courseId);
+        if (courseUser is null) return false;
         
-        ProjectCoursePatchDto(course, coursePatchDto);
-        await courseRepository.UpdateCourseAsync(course);
-
+        ProjectCoursePatchDto(courseUser.Course, coursePatchDto);
+        await courseRepository.UpdateCourseAsync(courseUser.Course);
         return true;
     }
 
     public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
     {
-        var course = await GetAdministeredCourseAsync(httpContext, courseId);
-        if (course is null) return false;
+        var courseUser = await GetAdministrativeCourseUserAsync(httpContext, courseId);
+        if (courseUser is null) return false;
 
         await courseRepository.DeleteCourseAsync(courseId);
         return true;
     }
 
-    private async Task<Course?> GetAdministeredCourseAsync(HttpContext httpContext, Guid courseId)
+    public async Task<bool> ChangeAdministrationOnCourseAsync(
+        HttpContext httpContext, Guid courseId, string userName, bool isCourseAdministrator)
+    {
+        var grantorCourseUser = await GetAdministrativeCourseUserAsync(httpContext, courseId);
+        if (grantorCourseUser is null) return false;
+
+        var granteeCourseUser = await courseRepository.GetCourseUserAsync(courseId, userName);
+        if (granteeCourseUser is not { User.UserType: UserType.Teacher }
+            || granteeCourseUser.UserName == grantorCourseUser.UserName) return false;
+
+        granteeCourseUser.IsCourseAdministrator = isCourseAdministrator;
+        await courseRepository.UpdateCourseUserAsync(granteeCourseUser);
+        
+        return true;
+    }
+
+    private async Task<CourseUser?> GetAdministrativeCourseUserAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
         var courseUser = await courseRepository.GetCourseUserAsync(courseId, user.Name);
-        
-        return courseUser is not { IsCourseAdministrator: true }
-            ? null
-            : courseUser.Course;
+
+        return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
     }
     
     private static CourseDto MapToCourseDto(Course course) =>

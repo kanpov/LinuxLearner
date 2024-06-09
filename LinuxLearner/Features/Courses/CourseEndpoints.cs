@@ -17,6 +17,12 @@ public static class CourseEndpoints
         builder.MapDelete("/courses/{id:guid}", DeleteCourse)
             .RequireAuthorization("teacher");
 
+        builder.MapPut("/courses/{id:guid}/administration/grant/{username}", GrantCourseAdministration)
+            .RequireAuthorization("teacher");
+
+        builder.MapPut("/courses/{id:guid}/administration/revoke/{username}", RevokeCourseAdministration)
+            .RequireAuthorization("teacher");
+
         builder.MapGet("/courses/{id:guid}", GetCourse)
             .WithName(nameof(GetCourse));
     }
@@ -47,6 +53,24 @@ public static class CourseEndpoints
         HttpContext httpContext)
     {
         var success = await courseService.DeleteCourseAsync(httpContext, id);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+    
+    private static async Task<Results<NotFound, NoContent>> GrantCourseAdministration(
+        HttpContext httpContext, CourseService courseService, Guid id, string username)
+    {
+        var success =
+            await courseService.ChangeAdministrationOnCourseAsync(httpContext, id, username,
+                isCourseAdministrator: true);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+    
+    private static async Task<Results<NotFound, NoContent>> RevokeCourseAdministration(
+        HttpContext httpContext, CourseService courseService, Guid id, string username)
+    {
+        var success =
+            await courseService.ChangeAdministrationOnCourseAsync(httpContext, id, username,
+                isCourseAdministrator: false);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 

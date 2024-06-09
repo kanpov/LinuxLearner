@@ -28,3 +28,8 @@ Content-Type: application/json
 // Delete course
 DELETE {{api}}/courses/cc3d9933-6e1a-4347-b69d-0229c4da4eee
 Authorization: Bearer {{teacher-token}}
+###
+
+// Grant or revoke administration
+PUT {{api}}/courses/f671467b-a6a9-4efe-b17d-d9dfe973977f/administration/revoke/anotherteacher
+Authorization: Bearer {{teacher-token}}
