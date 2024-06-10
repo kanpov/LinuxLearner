@@ -107,10 +107,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-var group = app.MapGroup("/api/v1").RequireAuthorization();
+var studentApi = app.MapGroup("/api/student/v1").RequireAuthorization("student");
+var teacherApi = app.MapGroup("/api/teacher/v1").RequireAuthorization("teacher");
+var adminApi = app.MapGroup("/api/admin/v1").RequireAuthorization("admin");
 
-group.MapUserEndpoints();
-group.MapCourseEndpoints();
+UserEndpoints.Map(studentApi, teacherApi, adminApi);
+CourseEndpoints.Map(studentApi, teacherApi, adminApi);
 
 app.Run();
 

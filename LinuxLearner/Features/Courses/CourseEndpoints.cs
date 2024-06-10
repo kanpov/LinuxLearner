@@ -6,31 +6,19 @@ namespace LinuxLearner.Features.Courses;
 
 public static class CourseEndpoints
 {
-    public static void MapCourseEndpoints(this RouteGroupBuilder builder)
+    public static void Map(RouteGroupBuilder studentApi, RouteGroupBuilder teacherApi, RouteGroupBuilder adminApi)
     {
-        builder.MapPost("/courses", CreateCourse)
-            .RequireAuthorization("teacher");
-
-        builder.MapPatch("/courses/{id:guid}", PatchCourse)
-            .RequireAuthorization("teacher");
-
-        builder.MapDelete("/courses/{id:guid}", DeleteCourse)
-            .RequireAuthorization("teacher");
-
-        builder.MapGet("/courses/{id:guid}", GetCourse)
-            .WithName(nameof(GetCourse));
-
-        builder.MapGet("/participations/course/{id:guid}/user/{username}", GetParticipation);
-
-        builder.MapGet("/participations/course/{id:guid}", GetParticipationsForCourse);
-
-        builder.MapGet("/participations/user/{username}", GetParticipationsForUser);
+        studentApi.MapGet("/courses/{id:guid}", GetCourse).WithName(nameof(GetCourse));
+        studentApi.MapGet("/participations/course/{id:guid}/user/{username}", GetParticipation);
+        studentApi.MapGet("/participations/course/{id:guid}", GetParticipationsForCourse);
+        studentApi.MapGet("/participations/user/{username}", GetParticipationsForUser);
         
-        builder.MapPut("/participations/course/{id:guid}/user/{username}/administration/grant", GrantCourseAdministration)
-            .RequireAuthorization("teacher");
-
-        builder.MapPut("/participations/course/{id:guid}/user/{username}/administration/revoke", RevokeCourseAdministration)
-            .RequireAuthorization("teacher");
+        teacherApi.MapPost("/courses", CreateCourse);
+        teacherApi.MapPatch("/courses/{id:guid}", PatchCourse);
+        teacherApi.MapDelete("/courses/{id:guid}", DeleteCourse);
+        
+        adminApi.MapPut("/participations/course/{id:guid}/user/{username}/administration/grant", GrantCourseAdministration);
+        adminApi.MapPut("/participations/course/{id:guid}/user/{username}/administration/revoke", RevokeCourseAdministration);
     }
 
     private static async Task<Results<ValidationProblem, CreatedAtRoute<CourseDto>>> CreateCourse(

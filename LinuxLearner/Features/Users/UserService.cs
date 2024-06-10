@@ -34,7 +34,7 @@ public class UserService(
     public async Task DeleteAuthorizedUserAsync(HttpContext httpContext)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
-        await userRepository.DeleteUserAsync(user.Name);
+        await DeleteUserAsync(user.Name);
     }
 
     public async Task<UserDto?> GetUserAsync(string username)
@@ -84,21 +84,34 @@ public class UserService(
 
         await userRepository.UpdateUserAsync(receiverUser);
 
-        var newGroupId = await GetKeycloakGroupId(receiverUser.UserType, realmId, metadataOptions);
-        var userId = await GetKeycloakUserId(receiverUser.Name, realmId);
+        var newGroupId = await GetKeycloakGroupId(receiverUser.UserType, metadataOptions);
+        var userId = await GetKeycloakUserId(receiverUser.Name);
         
         await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
         
         if (demote)
         {
-            var oldGroupId = await GetKeycloakGroupId(oldUserType, realmId, metadataOptions);
+            var oldGroupId = await GetKeycloakGroupId(oldUserType, metadataOptions);
             await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
         }
 
         return true;
     }
+    
+    public async Task<bool> DeleteUserAsync(string username)
+    {
+        var user = await userRepository.GetUserAsync(username);
+        if (user is null) return false;
 
-    private async Task<string> GetKeycloakGroupId(UserType userType, string realmId, IConfigurationSection metadataOptions)
+        await userRepository.DeleteUserAsync(username);
+
+        var userId = await GetKeycloakUserId(username);
+        await keycloakUserClient.DeleteUserAsync("master", userId);
+        
+        return true;
+    }
+
+    private async Task<string> GetKeycloakGroupId(UserType userType, IConfigurationSection metadataOptions)
     {
         var groupName = userType switch
         {
@@ -111,7 +124,7 @@ public class UserService(
             async token =>
             {
                 var queriedGroups = await keycloakGroupClient.GetGroupsAsync(
-                    realmId, new GetGroupsRequestParameters
+                    "master", new GetGroupsRequestParameters
                     {
                         Search = groupName,
                         Exact = false,
@@ -123,13 +136,13 @@ public class UserService(
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
-    private async Task<string> GetKeycloakUserId(string username, string realmId)
+    private async Task<string> GetKeycloakUserId(string username)
     {
         return await fusionCache.GetOrSetAsync<string>(
             $"/keycloak-user-id/{username}",
             async token =>
             {
-                var queriedUsers = await keycloakUserClient.GetUsersAsync(realmId,
+                var queriedUsers = await keycloakUserClient.GetUsersAsync("master",
                     new GetUsersRequestParameters
                     {
                         Max = 1,

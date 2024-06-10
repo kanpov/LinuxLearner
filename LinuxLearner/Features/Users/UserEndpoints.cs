@@ -6,16 +6,18 @@ namespace LinuxLearner.Features.Users;
 
 public static class UserEndpoints
 {
-    public static void MapUserEndpoints(this RouteGroupBuilder builder)
+    public static void Map(RouteGroupBuilder studentApi, RouteGroupBuilder teacherApi, RouteGroupBuilder adminApi)
     {
-        builder.MapGet("/user/self", GetSelfUser);
-        builder.MapPatch("/user/self", PatchSelfUser);
-        builder.MapDelete("/user/self", DeleteSelfUser);
+        studentApi.MapGet("/user/self", GetSelfUser);
+        studentApi.MapPatch("/user/self", PatchSelfUser);
+        studentApi.MapDelete("/user/self", DeleteSelfUser);
+        studentApi.MapGet("/users/{username}", GetUser);
+        studentApi.MapGet("/users", GetUsers);
         
-        builder.MapGet("/users/{username}", GetUser);
-        builder.MapGet("/users", GetUsers);
-        builder.MapPut("/users/{username}/promote", PromoteUser);
-        builder.MapPut("/users/{username}/demote", DemoteUser);
+        teacherApi.MapPut("/users/{username}/promote", PromoteUser);
+        teacherApi.MapPut("/users/{username}/demote", DemoteUser);
+
+        adminApi.MapDelete("/users/{username}", DeleteUser);
     }
 
     private static async Task<Ok<UserDto>> GetSelfUser(HttpContext httpContext, UserService userService)
@@ -67,5 +69,11 @@ public static class UserEndpoints
     {
         var successful = await userService.ChangeUserRoleAsync(httpContext, username, demote: true);
         return successful ? TypedResults.NoContent() : TypedResults.Forbid();
+    }
+
+    private static async Task<Results<NotFound, NoContent>> DeleteUser(UserService userService, string username)
+    {
+        var successful = await userService.DeleteUserAsync(username);
+        return successful ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

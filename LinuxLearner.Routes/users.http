@@ -31,3 +31,8 @@ Authorization: Bearer {{student-token}}
 // Elevate or demote user
 PUT {{api}}/users/samplestudent/demote
 Authorization: Bearer {{teacher-token}}
+###
+
+// Delete user as admin
+DELETE {{api}}/users/samplestudent
+Authorization: 
