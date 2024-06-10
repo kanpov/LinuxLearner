@@ -36,18 +36,6 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         userDto.Description.Should().Be(description);
     }
 
-    [Theory]
-    [InlineData(UserType.Student), InlineData(UserType.Teacher)]
-    public async Task DeleteAuthorizedUserAsync_ShouldRemove(UserType userType)
-    {
-        var httpContext = MakeContext(userType);
-        var initialDto = await Service.GetAuthorizedUserAsync(httpContext);
-        await Service.DeleteAuthorizedUserAsync(httpContext);
-
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == initialDto.Name);
-        user.Should().BeNull();
-    }
-
     [Theory, CustomAutoData]
     public async Task GetUserAsync_ShouldReturnUser_WhenItExists(User user)
     {
@@ -86,4 +74,6 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         user.Should().NotBeNull();
         user.Should().BeEquivalentTo(userDto);
     }
+    
+    // investigate the possibility of connecting to keycloak so that DELETE endpoints also become testable
 }

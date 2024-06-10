@@ -24,6 +24,13 @@ public class UserService(
     public async Task<UserDto> PatchAuthorizedUserAsync(HttpContext httpContext, UserPatchDto userPatchDto)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
+        return (await PatchUserAsync(user.Name, userPatchDto))!;
+    }
+
+    public async Task<UserDto?> PatchUserAsync(string username, UserPatchDto userPatchDto)
+    {
+        var user = await userRepository.GetUserAsync(username);
+        if (user is null) return null;
         
         ProjectUserPatchDto(user, userPatchDto);
         await userRepository.UpdateUserAsync(user);
@@ -35,6 +42,19 @@ public class UserService(
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
         await DeleteUserAsync(user.Name);
+    }
+    
+    public async Task<bool> DeleteUserAsync(string username)
+    {
+        var user = await userRepository.GetUserAsync(username);
+        if (user is null) return false;
+
+        await userRepository.DeleteUserAsync(username);
+
+        var userId = await GetKeycloakUserId(username);
+        await keycloakUserClient.DeleteUserAsync("master", userId);
+        
+        return true;
     }
 
     public async Task<UserDto?> GetUserAsync(string username)
@@ -95,19 +115,6 @@ public class UserService(
             await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
         }
 
-        return true;
-    }
-    
-    public async Task<bool> DeleteUserAsync(string username)
-    {
-        var user = await userRepository.GetUserAsync(username);
-        if (user is null) return false;
-
-        await userRepository.DeleteUserAsync(username);
-
-        var userId = await GetKeycloakUserId(username);
-        await keycloakUserClient.DeleteUserAsync("master", userId);
-        
         return true;
     }
 

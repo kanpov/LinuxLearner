@@ -1,38 +1,8 @@
-// Get self user
-GET {{api}}/user/self
-Authorization: Bearer {{student-token}}
-###
-
-// Patch self user
-PATCH {{api}}/user/self
-Authorization: Bearer {{student-token}}
+// Patch user as admin
+PATCH {{admin-api}}/users/samplestudent
+Authorization: Bearer {{admin-token}}
 Content-Type: application/json
 
 {
-  "description": "new_description"
+  "description": "Yo Mr. White, we got a new description"
 }
-###
-
-// Delete self user
-DELETE {{api}}/user/self
-Authorization: Bearer {{student-token}}
-###
-
-// Get user by username
-GET {{api}}/users/sampleteacher
-Authorization: Bearer {{student-token}}
-###
-
-// Get all users paged
-GET {{api}}/users
-Authorization: Bearer {{student-token}}
-###
-
-// Elevate or demote user
-PUT {{api}}/users/samplestudent/demote
-Authorization: Bearer {{teacher-token}}
-###
-
-// Delete user as admin
-DELETE {{api}}/users/samplestudent
-Authorization: 
