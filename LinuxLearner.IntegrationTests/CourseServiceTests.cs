@@ -3,6 +3,7 @@ using FluentAssertions;
 using LinuxLearner.Domain;
 using LinuxLearner.Features.Courses;
 using LinuxLearner.Features.Users;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,17 +53,52 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     [Theory, CustomAutoData]
     public async Task PatchCourseAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
     {
+        var httpContext = await ArrangeParticipation(course);
+        var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
+        successful.Should().BeTrue();
+        Match(course, coursePatchDto);
+    }
+
+    [Theory, CustomAutoData]
+    public async Task PatchCourseAsync_ShouldRejectNonAdministrator(Course course, CoursePatchDto coursePatchDto)
+    {
+        var httpContext = await ArrangeParticipation(course, isAdministrator: false);
+        var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
+        successful.Should().BeFalse();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteCourseAsync_ShouldPersist(Course course)
+    {
+        var httpContext = await ArrangeParticipation(course);
+        var successful = await Service.DeleteCourseAsync(httpContext, course.Id);
+        
+        successful.Should().BeTrue();
+        var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
+        queriedCourse.Should().BeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteCourseAsync_ShouldRejectNonAdministrator(Course course)
+    {
+        var httpContext = await ArrangeParticipation(course, isAdministrator: false);
+        var successful = await Service.DeleteCourseAsync(httpContext, course.Id);
+        
+        successful.Should().BeFalse();
+        var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
+        queriedCourse.Should().NotBeNull();
+    }
+
+    private async Task<HttpContext> ArrangeParticipation(Course course, bool isAdministrator = true)
+    {
         var httpContext = MakeContext(UserType.Teacher);
         DbContext.Add(course);
         await UserService.GetAuthorizedUserAsync(httpContext);
         DbContext.Add(new CourseParticipation
-            { CourseId = course.Id, UserName = httpContext.User.Identity!.Name!, IsCourseAdministrator = true });
+            { CourseId = course.Id, UserName = httpContext.User.Identity!.Name!, IsCourseAdministrator = isAdministrator });
         await DbContext.SaveChangesAsync();
 
-        var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
-
-        successful.Should().BeTrue();
-        Match(course, coursePatchDto);
+        return httpContext;
     }
 
     private static void Match(Course course, CourseDto courseDto)
