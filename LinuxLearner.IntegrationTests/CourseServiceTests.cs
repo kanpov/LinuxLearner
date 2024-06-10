@@ -88,30 +88,6 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
         queriedCourse.Should().NotBeNull();
     }
-
-    [Theory, CustomAutoData]
-    public async Task ChangeAdministrationOnCourseAsync_ShouldSucceedWithCorrectData(Course course, User user)
-    {
-        var httpContext = await ArrangeDoubleParticipation(course, user);
-        var successful = await Service.ChangeAdministrationOnCourseAsync(httpContext, course.Id, user.Name, false);
-        successful.Should().BeTrue();
-        var participation = await DbContext.CourseParticipations.FirstOrDefaultAsync(p =>
-                p.UserName == user.Name && p.CourseId == course.Id);
-        participation.Should().NotBeNull();
-        participation!.IsCourseAdministrator.Should().BeFalse();
-    }
-
-    private async Task<HttpContext> ArrangeDoubleParticipation(Course course, User user)
-    {
-        var httpContext = await ArrangeParticipation(course);
-        user.UserType = UserType.Teacher;
-        DbContext.Add(user);
-        DbContext.Add(new CourseParticipation
-            { CourseId = course.Id, UserName = user.Name, IsCourseAdministrator = true });
-        await DbContext.SaveChangesAsync();
-
-        return httpContext;
-    }
     
     private async Task<HttpContext> ArrangeParticipation(Course course, bool isAdministrator = true)
     {

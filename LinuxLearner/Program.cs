@@ -5,6 +5,7 @@ using Keycloak.AuthServices.Authorization;
 using Keycloak.AuthServices.Common;
 using Keycloak.AuthServices.Sdk;
 using LinuxLearner.Database;
+using LinuxLearner.Features.CourseParticipations;
 using LinuxLearner.Features.Courses;
 using LinuxLearner.Features.Users;
 using LinuxLearner.Utilities;
@@ -67,9 +68,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // DI
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<CourseRepository>();
+builder.Services.AddScoped<CourseParticipationRepository>();
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<CourseService>();
+builder.Services.AddScoped<CourseParticipationService>();
 
 builder.Services.AddScoped<IValidator<UserPatchDto>, UserPatchDtoValidator>();
 builder.Services.AddScoped<IValidator<CourseCreateDto>, CourseCreateDtoValidator>();
@@ -113,6 +116,7 @@ var adminApi = app.MapGroup("/api/admin/v1").RequireAuthorization("admin");
 
 UserEndpoints.Map(studentApi, teacherApi, adminApi);
 CourseEndpoints.Map(studentApi, teacherApi, adminApi);
+CourseParticipationEndpoints.Map(studentApi, adminApi);
 
 app.Run();
 
