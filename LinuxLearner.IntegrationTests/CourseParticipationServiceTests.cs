@@ -15,9 +15,9 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
     private UserService UserService => Services.GetRequiredService<UserService>();
     
     [Theory, CustomAutoData]
-    public async Task ChangeAdministrationOnCourseAsync_ShouldSucceedWithCorrectData(Course course)
+    public async Task ChangeAdministrationOnCourseAsync_ShouldSucceedWithCorrectData(Course course, Fixture fixture)
     {
-        var (httpContext, participations) = await ArrangeParticipations(course);
+        var (httpContext, participations) = await ArrangeParticipations(course, fixture);
         var userName = participations.First().UserName;
         
         var successful = await Service.ChangeAdministrationOnCourseAsync(httpContext, course.Id, userName, true);
@@ -29,7 +29,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         participation!.IsCourseAdministrator.Should().BeTrue();
     }
 
-    private async Task<(HttpContext, List<CourseParticipation>)> ArrangeParticipations(Course course, int amount = 1)
+    private async Task<(HttpContext, List<CourseParticipation>)> ArrangeParticipations(Course course, Fixture fixture, int amount = 1)
     {
         var httpContext = MakeContext(UserType.Teacher);
         await UserService.GetAuthorizedUserAsync(httpContext);
@@ -38,7 +38,6 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         DbContext.Add(new CourseParticipation
             { CourseId = course.Id, UserName = httpContext.User.Identity!.Name!, IsCourseAdministrator = true });
 
-        var fixture = CustomAutoDataAttribute.MakeFixture();
         var courseParticipations = new List<CourseParticipation>();
         for (var i = 0; i < amount; ++i)
         {
