@@ -7,7 +7,7 @@ namespace LinuxLearner.Features.CourseParticipations;
 
 public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
-        public async Task<CourseParticipation?> GetParticipationAsync(Guid courseId, string userName)
+    public async Task<CourseParticipation?> GetParticipationAsync(Guid courseId, string userName)
     {
         return await fusionCache.GetOrSetAsync<CourseParticipation?>(
             $"/course-participation/course/{courseId}/user/{userName}",
