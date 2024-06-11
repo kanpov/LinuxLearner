@@ -26,9 +26,9 @@ public class CourseService(
         return MapToCourseDto(course);
     }
 
-    public async Task<CourseDto?> GetCourseAsync(Guid id)
+    public async Task<CourseDto?> GetCourseAsync(Guid courseId)
     {
-        var course = await courseRepository.GetCourseAsync(id);
+        var course = await courseRepository.GetCourseAsync(courseId);
         return course is null ? null : MapToCourseDto(course);
     }
 
@@ -42,10 +42,29 @@ public class CourseService(
         return true;
     }
 
+    public async Task<bool> ForcePatchCourseAsync(Guid courseId, CoursePatchDto coursePatchDto)
+    {
+        var course = await courseRepository.GetCourseAsync(courseId);
+        if (course is null) return false;
+        
+        ProjectCoursePatchDto(course, coursePatchDto);
+        await courseRepository.UpdateCourseAsync(course);
+        return true;
+    }
+
     public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
     {
         var courseUser = await courseParticipationService.GetAdministrativeParticipationAsync(httpContext, courseId);
         if (courseUser is null) return false;
+
+        await courseRepository.DeleteCourseAsync(courseId);
+        return true;
+    }
+
+    public async Task<bool> ForceDeleteCourseAsync(Guid courseId)
+    {
+        var course = await courseRepository.GetCourseAsync(courseId);
+        if (course is null) return false;
 
         await courseRepository.DeleteCourseAsync(courseId);
         return true;

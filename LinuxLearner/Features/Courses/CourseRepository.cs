@@ -7,16 +7,16 @@ namespace LinuxLearner.Features.Courses;
 
 public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
-    public async Task<Course?> GetCourseAsync(Guid id)
+    public async Task<Course?> GetCourseAsync(Guid courseId)
     {
         return await fusionCache.GetOrSetAsync<Course?>(
-            $"/course/{id}",
+            $"/course/{courseId}",
             async token =>
             {
-                return await dbContext.Courses.FirstOrDefaultAsync(c => c.Id == id, token);
+                return await dbContext.Courses.FirstOrDefaultAsync(c => c.Id == courseId, token);
             });
     }
-    
+
     public async Task AddCourseAsync(Course course)
     {
         dbContext.Add(course);

@@ -116,7 +116,7 @@ var adminApi = app.MapGroup("/api/admin/v1").RequireAuthorization("admin");
 
 UserEndpoints.Map(studentApi, teacherApi, adminApi);
 CourseEndpoints.Map(studentApi, teacherApi, adminApi);
-CourseParticipationEndpoints.Map(studentApi, adminApi);
+CourseParticipationEndpoints.Map(studentApi, teacherApi, adminApi);
 
 app.Run();
 

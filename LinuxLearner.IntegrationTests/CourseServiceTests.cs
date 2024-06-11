@@ -51,7 +51,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task PatchCourseAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
+    public async Task PatchCourseIfAdministeredAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
     {
         var httpContext = await ArrangeParticipation(course);
         var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
@@ -60,7 +60,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task PatchCourseAsync_ShouldRejectNonAdministrator(Course course, CoursePatchDto coursePatchDto)
+    public async Task PatchCourseIfAdministeredAsync_ShouldRejectNonAdministrator(Course course, CoursePatchDto coursePatchDto)
     {
         var httpContext = await ArrangeParticipation(course, isAdministrator: false);
         var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
@@ -68,7 +68,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task DeleteCourseAsync_ShouldPersist(Course course)
+    public async Task DeleteCourseIfAdministeredAsync_ShouldPersist(Course course)
     {
         var httpContext = await ArrangeParticipation(course);
         var successful = await Service.DeleteCourseAsync(httpContext, course.Id);
@@ -79,7 +79,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task DeleteCourseAsync_ShouldRejectNonAdministrator(Course course)
+    public async Task DeleteCourseIfAdministeredAsync_ShouldRejectNonAdministrator(Course course)
     {
         var httpContext = await ArrangeParticipation(course, isAdministrator: false);
         var successful = await Service.DeleteCourseAsync(httpContext, course.Id);

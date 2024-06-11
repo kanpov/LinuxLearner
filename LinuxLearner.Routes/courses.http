@@ -1,0 +1,21 @@
+# Create a course
+POST {{teacher-api}}/courses
+Authorization: Bearer {{teacher-token}}
+Content-Type: application/json
+
+{
+  "name": "Mah jerb course",
+  "description": "Mah description",
+  "acceptanceMode": "NoInviteRequired"
+}
+###
+
+// Force-delete a course
+DELETE {{admin-api}}/courses/7476a102-2be1-40ee-8018-6b1189640bd0/force
+Authorization: Bearer {{admin-token}}
+Content-Type: application/json
+###
+
+// Delete own participation
+DELETE {{student-api}}/participations/course/e663b67c-73a0-4bc1-8901-d307e9874ea2/user/self
+Authorization: Bearer {{teacher-token}}

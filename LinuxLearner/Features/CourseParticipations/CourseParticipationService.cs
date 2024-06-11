@@ -59,6 +59,33 @@ public class CourseParticipationService(
 
         return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
     }
+
+    public async Task<bool> DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
+    {
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Name);
+        if (participation is null) return false;
+
+        await courseParticipationRepository.DeleteParticipationAsync(participation);
+        return true;
+    }
+
+    public async Task<bool> DeleteParticipationAsync(HttpContext httpContext, Guid courseId, string username)
+    {
+        var administrativeParticipation = await GetAdministrativeParticipationAsync(httpContext, courseId);
+        if (administrativeParticipation is null) return false;
+
+        return await ForceDeleteParticipationAsync(courseId, username);
+    }
+
+    public async Task<bool> ForceDeleteParticipationAsync(Guid courseId, string username)
+    {
+        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, username);
+        if (participation is null) return false;
+
+        await courseParticipationRepository.DeleteParticipationAsync(participation);
+        return true;
+    }
     
     private static CourseParticipationDto MapToCourseParticipationDto(CourseParticipation courseParticipation) =>
         new(CourseService.MapToCourseDto(courseParticipation.Course),

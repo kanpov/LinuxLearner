@@ -61,6 +61,19 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
         await fusionCache.SetAsync(
             $"/course-participation/course/{courseParticipation.CourseId}/user/{courseParticipation.UserName}", courseParticipation);
         await fusionCache.RemoveAsync($"/course-participation/course/{courseParticipation.CourseId}");
-        await fusionCache.RemoveAsync($"/course-participation/user/{courseParticipation.User}");
+        await fusionCache.RemoveAsync($"/course-participation/user/{courseParticipation.UserName}");
+    }
+
+    public async Task DeleteParticipationAsync(CourseParticipation courseParticipation)
+    {
+        var username = courseParticipation.UserName;
+        var courseId = courseParticipation.CourseId;
+        
+        await dbContext.CourseParticipations
+            .Where(p => p.UserName == username && p.CourseId == courseId)
+            .ExecuteDeleteAsync();
+        await fusionCache.RemoveAsync($"/course-participation/course{courseId}/user/{username}");
+        await fusionCache.RemoveAsync($"/course-participation/course/{courseId}");
+        await fusionCache.RemoveAsync($"/course-participation/user/{username}");
     }
 }
