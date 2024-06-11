@@ -11,7 +11,7 @@ namespace LinuxLearner.IntegrationTests;
 
 public class CourseParticipationServiceTests(IntegrationTestFactory factory) : IntegrationTest(factory)
 {
-    private CourseParticipationService Service => Services.GetRequiredService<CourseParticipationService>();
+    private CourseParticipationService CourseParticipationService => Services.GetRequiredService<CourseParticipationService>();
     private UserService UserService => Services.GetRequiredService<UserService>();
     
     [Theory, CustomAutoData]
@@ -20,7 +20,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         var (httpContext, participations) = await ArrangeParticipations(course, fixture);
         var userName = participations.First().UserName;
         
-        var successful = await Service.ChangeAdministrationOnCourseAsync(httpContext, course.Id, userName, true);
+        var successful = await CourseParticipationService.ChangeAdministrationOnCourseAsync(httpContext, course.Id, userName, true);
         
         successful.Should().BeTrue();
         var participation = await DbContext.CourseParticipations.FirstOrDefaultAsync(p =>

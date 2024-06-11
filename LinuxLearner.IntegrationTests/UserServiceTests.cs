@@ -9,14 +9,14 @@ namespace LinuxLearner.IntegrationTests;
 
 public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(factory)
 {
-    private UserService Service => Services.GetRequiredService<UserService>();
+    private UserService UserService => Services.GetRequiredService<UserService>();
     
     [Theory]
     [InlineData(UserType.Student), InlineData(UserType.Teacher)]
     public async Task GetAuthorizedUserAsync_ShouldCreateUser(UserType userType)
     {
         var httpContext = MakeContext(userType);
-        var userDto = await Service.GetAuthorizedUserAsync(httpContext);
+        var userDto = await UserService.GetAuthorizedUserAsync(httpContext);
 
         var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
         user.Should().NotBeNull();
@@ -32,7 +32,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         DbContext.Add(user);
         await DbContext.SaveChangesAsync();
 
-        var userDto = await Service.GetUserAsync(user.Name);
+        var userDto = await UserService.GetUserAsync(user.Name);
         userDto.Should().NotBeNull();
         userDto!.Should()
             .BeEquivalentTo(new UserDto(user.Name, user.UserType, user.Description, user.RegistrationTime));
@@ -41,7 +41,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     [Theory, CustomAutoData]
     public async Task GetUserAsync_ShouldReturnNull_WithNoUserExisting(string username)
     {
-        var userDto = await Service.GetUserAsync(username);
+        var userDto = await UserService.GetUserAsync(username);
         userDto.Should().BeNull();
     }
 
@@ -54,7 +54,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
 
         var expectedDtos = users.Select(user =>
             new UserDto(user.Name, user.UserType, user.Description, user.RegistrationTime));
-        var actualDtos = await Service.GetUsersAsync(1, 10);
+        var actualDtos = await UserService.GetUsersAsync(1, 10);
         expectedDtos.Should().BeEquivalentTo(actualDtos);
     }
     
@@ -65,9 +65,9 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     {
         var httpContext = MakeContext(userType);
         var userPatchDto = new UserPatchDto(description);
-        await Service.GetAuthorizedUserAsync(httpContext);
+        await UserService.GetAuthorizedUserAsync(httpContext);
         
-        var userDto = await Service.PatchAuthorizedUserAsync(httpContext, userPatchDto);
+        var userDto = await UserService.PatchAuthorizedUserAsync(httpContext, userPatchDto);
         
         var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
         user.Should().NotBeNull();
@@ -81,7 +81,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         DbContext.Users.Add(user);
         await DbContext.SaveChangesAsync();
 
-        var userDto = await Service.PatchUserAsync(user.Name, userPatchDto);
+        var userDto = await UserService.PatchUserAsync(user.Name, userPatchDto);
 
         userDto.Should().NotBeNull();
         Match(user, userDto!);
@@ -91,7 +91,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     [Theory, CustomAutoData]
     public async Task PatchUserAsync_ShouldFail_OnNonExistentUser(string username, UserPatchDto userPatchDto)
     {
-        var userDto = await Service.PatchUserAsync(username, userPatchDto);
+        var userDto = await UserService.PatchUserAsync(username, userPatchDto);
         userDto.Should().BeNull();
     }
 
@@ -99,10 +99,10 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     public async Task DeleteAuthorizedUserAsync_ShouldSucceed()
     {
         var httpContext = MakeContext(UserType.Student);
-        var userDto = await Service.GetAuthorizedUserAsync(httpContext);
+        var userDto = await UserService.GetAuthorizedUserAsync(httpContext);
         var keycloakUserId = await CreateKeycloakUserAsync(userDto.Name, userDto.UserType);
 
-        await Service.DeleteAuthorizedUserAsync(httpContext);
+        await UserService.DeleteAuthorizedUserAsync(httpContext);
 
         await AssertUserIsMissingAsync(userDto.Name, keycloakUserId);
     }
@@ -114,17 +114,74 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         var keycloakUserId = await CreateKeycloakUserAsync(user);
         await DbContext.SaveChangesAsync();
 
-        var success = await Service.DeleteUserAsync(user.Name);
+        var success = await UserService.DeleteUserAsync(user.Name);
 
         success.Should().BeTrue();
         await AssertUserIsMissingAsync(user.Name, keycloakUserId);
     }
 
+    [Fact]
+    public async Task ChangeUserRoleAsync_ShouldRejectSamePerson()
+    {
+        var httpContext = MakeContext(UserType.Student);
+        var user = await UserService.GetAuthorizedUserAsync(httpContext);
+
+        var success = await UserService.ChangeUserRoleAsync(httpContext, user.Name, demote: false);
+        success.Should().BeFalse();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task ChangeUserRoleAsync_ShouldRejectInsufficientPrivilege(User granteeUser)
+    {
+        var httpContext = MakeContext(UserType.Student);
+        await UserService.GetAuthorizedUserAsync(httpContext);
+        granteeUser.UserType = UserType.Teacher;
+
+        var success = await UserService.ChangeUserRoleAsync(httpContext, granteeUser.Name, demote: false);
+        success.Should().BeFalse();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task ChangeUserRoleAsync_ShouldPromote(User granteeUser1, User granteeUser2)
+    {
+        await AssertPromoteOrDemoteAsync(granteeUser1, UserType.Admin, UserType.Teacher, UserType.Admin, false,
+            "admins");
+        await AssertPromoteOrDemoteAsync(granteeUser2, UserType.Teacher, UserType.Student, UserType.Teacher, false,
+            "teachers");
+    }
+
+    [Theory, CustomAutoData]
+    public async Task ChangeUserRoleAsync_ShouldDemote(User granteeUser)
+    {
+        await AssertPromoteOrDemoteAsync(granteeUser, UserType.Admin, UserType.Teacher, UserType.Student, true,
+            "students");
+    }
+
     [Theory, CustomAutoData]
     public async Task DeleteUserAsync_ShouldFail_OnNonExistentUser(string username)
     {
-        var success = await Service.DeleteUserAsync(username);
+        var success = await UserService.DeleteUserAsync(username);
         success.Should().BeFalse();
+    }
+
+    private async Task AssertPromoteOrDemoteAsync(User granteeUser, UserType grantorType, UserType granteeType,
+        UserType granteeNextType, bool demote, string groupName)
+    {
+        var httpContext = MakeContext(grantorType);
+        var grantorUser = await UserService.GetAuthorizedUserAsync(httpContext);
+        
+        granteeUser.UserType = granteeType;
+        DbContext.Add(granteeUser);
+        await DbContext.SaveChangesAsync();
+        var keycloakUserId = await CreateKeycloakUserAsync(granteeUser);
+
+        var success = await UserService.ChangeUserRoleAsync(httpContext, granteeUser.Name, demote);
+
+        success.Should().BeTrue();
+        grantorUser.UserType.Should().Be(grantorType);
+        granteeUser.UserType.Should().Be(granteeNextType);
+        var keycloakGroups = await KeycloakUserClient.GetUserGroupsAsync("master", keycloakUserId);
+        keycloakGroups.Any(g => g.Name == groupName).Should().BeTrue();
     }
 
     private async Task AssertUserIsMissingAsync(string username, string keycloakUserId)

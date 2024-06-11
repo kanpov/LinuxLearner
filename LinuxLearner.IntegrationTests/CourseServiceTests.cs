@@ -11,7 +11,7 @@ namespace LinuxLearner.IntegrationTests;
 
 public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTest(factory)
 {
-    private CourseService Service => Services.GetRequiredService<CourseService>();
+    private CourseService CourseService => Services.GetRequiredService<CourseService>();
     private UserService UserService => Services.GetRequiredService<UserService>();
 
     [Theory, CustomAutoData]
@@ -20,7 +20,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         DbContext.Add(course);
         await DbContext.SaveChangesAsync();
 
-        var courseDto = await Service.GetCourseAsync(course.Id);
+        var courseDto = await CourseService.GetCourseAsync(course.Id);
         courseDto.Should().NotBeNull();
         Match(course, courseDto!);
     }
@@ -28,7 +28,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     [Theory, CustomAutoData]
     public async Task GetCourseAsync_ShouldReturnNone_WhenNonExistent(Guid courseId)
     {
-        var courseDto = await Service.GetCourseAsync(courseId);
+        var courseDto = await CourseService.GetCourseAsync(courseId);
         courseDto.Should().BeNull();
     }
 
@@ -36,7 +36,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     public async Task CreateCourseAsync_ShouldPersist(CourseCreateDto courseCreateDto)
     {
         var httpContext = MakeContext(UserType.Teacher);
-        var courseDto = await Service.CreateCourseAsync(httpContext, courseCreateDto);
+        var courseDto = await CourseService.CreateCourseAsync(httpContext, courseCreateDto);
         
         Match(courseDto, courseCreateDto);
         
@@ -54,7 +54,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     public async Task PatchCourseIfAdministeredAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
     {
         var httpContext = await ArrangeParticipation(course);
-        var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
+        var successful = await CourseService.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
         successful.Should().BeTrue();
         Match(course, coursePatchDto);
     }
@@ -63,7 +63,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     public async Task PatchCourseIfAdministeredAsync_ShouldRejectNonAdministrator(Course course, CoursePatchDto coursePatchDto)
     {
         var httpContext = await ArrangeParticipation(course, isAdministrator: false);
-        var successful = await Service.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
+        var successful = await CourseService.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
         successful.Should().BeFalse();
     }
 
@@ -71,7 +71,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     public async Task DeleteCourseIfAdministeredAsync_ShouldPersist(Course course)
     {
         var httpContext = await ArrangeParticipation(course);
-        var successful = await Service.DeleteCourseAsync(httpContext, course.Id);
+        var successful = await CourseService.DeleteCourseAsync(httpContext, course.Id);
         
         successful.Should().BeTrue();
         var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
@@ -82,7 +82,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     public async Task DeleteCourseIfAdministeredAsync_ShouldRejectNonAdministrator(Course course)
     {
         var httpContext = await ArrangeParticipation(course, isAdministrator: false);
-        var successful = await Service.DeleteCourseAsync(httpContext, course.Id);
+        var successful = await CourseService.DeleteCourseAsync(httpContext, course.Id);
         
         successful.Should().BeFalse();
         var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
