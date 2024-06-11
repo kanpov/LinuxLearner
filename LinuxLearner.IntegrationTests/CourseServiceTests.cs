@@ -1,4 +1,3 @@
-using AutoFixture.Xunit2;
 using FluentAssertions;
 using LinuxLearner.Domain;
 using LinuxLearner.Features.Courses;
@@ -51,16 +50,34 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task PatchCourseIfAdministeredAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
+    public async Task PatchCourseAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
     {
         var httpContext = await ArrangeParticipation(course);
         var successful = await CourseService.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
         successful.Should().BeTrue();
         Match(course, coursePatchDto);
     }
+    
+    [Theory, CustomAutoData]
+    public async Task ForcePatchCourseAsync_ShouldRejectNonExistentCourse(Guid courseId, CoursePatchDto coursePatchDto)
+    {
+        var success = await CourseService.ForcePatchCourseAsync(courseId, coursePatchDto);
+        success.Should().BeFalse();
+    }
 
     [Theory, CustomAutoData]
-    public async Task PatchCourseIfAdministeredAsync_ShouldRejectNonAdministrator(Course course, CoursePatchDto coursePatchDto)
+    public async Task ForcePatchCourseAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
+    {
+        DbContext.Add(course);
+        await DbContext.SaveChangesAsync();
+
+        var success = await CourseService.ForcePatchCourseAsync(course.Id, coursePatchDto);
+        success.Should().BeTrue();
+        Match(course, coursePatchDto);
+    }
+
+    [Theory, CustomAutoData]
+    public async Task PatchCourseAsync_ShouldRejectNonAdministrator(Course course, CoursePatchDto coursePatchDto)
     {
         var httpContext = await ArrangeParticipation(course, isAdministrator: false);
         var successful = await CourseService.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
@@ -68,7 +85,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task DeleteCourseIfAdministeredAsync_ShouldPersist(Course course)
+    public async Task DeleteCourseAsync_ShouldPersist(Course course)
     {
         var httpContext = await ArrangeParticipation(course);
         var successful = await CourseService.DeleteCourseAsync(httpContext, course.Id);
@@ -79,7 +96,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     }
 
     [Theory, CustomAutoData]
-    public async Task DeleteCourseIfAdministeredAsync_ShouldRejectNonAdministrator(Course course)
+    public async Task DeleteCourseAsync_ShouldRejectNonAdministrator(Course course)
     {
         var httpContext = await ArrangeParticipation(course, isAdministrator: false);
         var successful = await CourseService.DeleteCourseAsync(httpContext, course.Id);
@@ -87,6 +104,25 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         successful.Should().BeFalse();
         var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
         queriedCourse.Should().NotBeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task ForceDeleteCourseAsync_ShouldRejectNonExistentCourse(Guid courseId)
+    {
+        var success = await CourseService.ForceDeleteCourseAsync(courseId);
+        success.Should().BeFalse();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task ForceDeleteCourseAsync_ShouldPersist(Course course)
+    {
+        DbContext.Add(course);
+        await DbContext.SaveChangesAsync();
+        
+        var success = await CourseService.ForceDeleteCourseAsync(course.Id);
+        success.Should().BeTrue();
+        var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
+        queriedCourse.Should().BeNull();
     }
     
     private async Task<HttpContext> ArrangeParticipation(Course course, bool isAdministrator = true)
