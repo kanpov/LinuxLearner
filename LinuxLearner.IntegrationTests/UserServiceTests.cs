@@ -18,7 +18,10 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         var httpContext = MakeContext(userType);
         var userDto = await Service.GetAuthorizedUserAsync(httpContext);
 
-        await AssertUserExistenceAsync(userDto);
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
+        user.Should().NotBeNull();
+        Match(user!, userDto);
+        
         userDto.UserType.Should().Be(userType);
         userDto.Name.Should().Be(httpContext.User.Identity!.Name!);
     }
@@ -29,11 +32,15 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     public async Task PatchAuthorizedUserAsync_ShouldModifyDescription(UserType userType, string description)
     {
         var httpContext = MakeContext(userType);
+        var userPatchDto = new UserPatchDto(description);
         await Service.GetAuthorizedUserAsync(httpContext);
-        var userDto = await Service.PatchAuthorizedUserAsync(httpContext, new UserPatchDto(description));
-
-        await AssertUserExistenceAsync(userDto);
-        userDto.Description.Should().Be(description);
+        
+        var userDto = await Service.PatchAuthorizedUserAsync(httpContext, userPatchDto);
+        
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
+        user.Should().NotBeNull();
+        Match(user!, userDto);
+        Match(userDto, userPatchDto);
     }
 
     [Theory, CustomAutoData]
@@ -68,11 +75,57 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         expectedDtos.Should().BeEquivalentTo(actualDtos);
     }
 
-    private async Task AssertUserExistenceAsync(UserDto userDto)
+    [Theory, CustomAutoData]
+    public async Task PatchUserAsync_ShouldApplyChanges_OnExistentUser(User user, UserPatchDto userPatchDto)
     {
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
-        user.Should().NotBeNull();
-        user.Should().BeEquivalentTo(userDto);
+        DbContext.Users.Add(user);
+        await DbContext.SaveChangesAsync();
+
+        var userDto = await Service.PatchUserAsync(user.Name, userPatchDto);
+
+        userDto.Should().NotBeNull();
+        Match(user, userDto!);
+        Match(userDto!, userPatchDto);
+    }
+
+    [Theory, CustomAutoData]
+    public async Task PatchUserAsync_ShouldFail_OnNonExistentUser(string username, UserPatchDto userPatchDto)
+    {
+        var userDto = await Service.PatchUserAsync(username, userPatchDto);
+        userDto.Should().BeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteUserAsync_ShouldSucceed_WithExistingUser(User user)
+    {
+        DbContext.Users.Add(user);
+        await DbContext.SaveChangesAsync();
+
+        var success = await Service.DeleteUserAsync(user.Name);
+
+        success.Should().BeTrue();
+        var queriedUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == user.Name);
+        queriedUser.Should().BeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteUserAsync_ShouldFail_OnNonExistentUser(string username)
+    {
+        var success = await Service.DeleteUserAsync(username);
+        success.Should().BeFalse();
+    }
+
+    private static void Match(User user, UserDto userDto)
+    {
+        user.Name.Should().Be(userDto.Name);
+        user.Description.Should().Be(userDto.Description);
+        user.UserType.Should().Be(userDto.UserType);
+        user.RegistrationTime.Should().Be(userDto.RegistrationTime);
+    }
+
+    private static void Match(UserDto userDto, UserPatchDto userPatchDto)
+    {
+        userDto.Description.Should().Be(userPatchDto.Description);
     }
     
     // investigate the possibility of connecting to keycloak so that DELETE endpoints also become testable

@@ -2,6 +2,7 @@ using Keycloak.AuthServices.Sdk.Admin;
 using Keycloak.AuthServices.Sdk.Admin.Requests.Groups;
 using Keycloak.AuthServices.Sdk.Admin.Requests.Users;
 using LinuxLearner.Domain;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace LinuxLearner.Features.Users;
@@ -14,6 +15,7 @@ public class UserService(
     IFusionCache fusionCache)
 {
     private const int MaxPageSize = 10;
+    public static bool KeycloakAvailable { private get; set; } = true;
     
     public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
     {
@@ -51,9 +53,12 @@ public class UserService(
 
         await userRepository.DeleteUserAsync(username);
 
-        var userId = await GetKeycloakUserId(username);
-        await keycloakUserClient.DeleteUserAsync("master", userId);
-        
+        if (KeycloakAvailable)
+        {
+            var userId = await GetKeycloakUserId(username);
+            await keycloakUserClient.DeleteUserAsync("master", userId);
+        }
+
         return true;
     }
 
@@ -104,15 +109,18 @@ public class UserService(
 
         await userRepository.UpdateUserAsync(receiverUser);
 
-        var newGroupId = await GetKeycloakGroupId(receiverUser.UserType, metadataOptions);
-        var userId = await GetKeycloakUserId(receiverUser.Name);
-        
-        await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
-        
-        if (demote)
+        if (KeycloakAvailable)
         {
-            var oldGroupId = await GetKeycloakGroupId(oldUserType, metadataOptions);
-            await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
+            var newGroupId = await GetKeycloakGroupId(receiverUser.UserType, metadataOptions);
+            var userId = await GetKeycloakUserId(receiverUser.Name);
+
+            await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
+
+            if (demote)
+            {
+                var oldGroupId = await GetKeycloakGroupId(oldUserType, metadataOptions);
+                await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
+            }
         }
 
         return true;
