@@ -1,5 +1,5 @@
-using AutoFixture.Xunit2;
 using FluentAssertions;
+using Keycloak.AuthServices.Sdk;
 using LinuxLearner.Domain;
 using LinuxLearner.Features.Users;
 using Microsoft.EntityFrameworkCore;
@@ -26,23 +26,6 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         userDto.Name.Should().Be(httpContext.User.Identity!.Name!);
     }
 
-    [Theory]
-    [InlineData(UserType.Student, "student_description")]
-    [InlineData(UserType.Teacher, "teacher_description")]
-    public async Task PatchAuthorizedUserAsync_ShouldApplyChanges(UserType userType, string description)
-    {
-        var httpContext = MakeContext(userType);
-        var userPatchDto = new UserPatchDto(description);
-        await Service.GetAuthorizedUserAsync(httpContext);
-        
-        var userDto = await Service.PatchAuthorizedUserAsync(httpContext, userPatchDto);
-        
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
-        user.Should().NotBeNull();
-        Match(user!, userDto);
-        Match(userDto, userPatchDto);
-    }
-
     [Theory, CustomAutoData]
     public async Task GetUserAsync_ShouldReturnUser_WhenItExists(User user)
     {
@@ -55,7 +38,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
             .BeEquivalentTo(new UserDto(user.Name, user.UserType, user.Description, user.RegistrationTime));
     }
 
-    [Theory, AutoData]
+    [Theory, CustomAutoData]
     public async Task GetUserAsync_ShouldReturnNull_WithNoUserExisting(string username)
     {
         var userDto = await Service.GetUserAsync(username);
@@ -73,6 +56,23 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
             new UserDto(user.Name, user.UserType, user.Description, user.RegistrationTime));
         var actualDtos = await Service.GetUsersAsync(1, 10);
         expectedDtos.Should().BeEquivalentTo(actualDtos);
+    }
+    
+    [Theory]
+    [InlineData(UserType.Student, "student_description")]
+    [InlineData(UserType.Teacher, "teacher_description")]
+    public async Task PatchAuthorizedUserAsync_ShouldApplyChanges(UserType userType, string description)
+    {
+        var httpContext = MakeContext(userType);
+        var userPatchDto = new UserPatchDto(description);
+        await Service.GetAuthorizedUserAsync(httpContext);
+        
+        var userDto = await Service.PatchAuthorizedUserAsync(httpContext, userPatchDto);
+        
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == userDto.Name);
+        user.Should().NotBeNull();
+        Match(user!, userDto);
+        Match(userDto, userPatchDto);
     }
 
     [Theory, CustomAutoData]
@@ -95,18 +95,29 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         userDto.Should().BeNull();
     }
 
+    [Fact]
+    public async Task DeleteAuthorizedUserAsync_ShouldSucceed()
+    {
+        var httpContext = MakeContext(UserType.Student);
+        var userDto = await Service.GetAuthorizedUserAsync(httpContext);
+        var keycloakUserId = await CreateKeycloakUserAsync(userDto.Name, userDto.UserType);
+
+        await Service.DeleteAuthorizedUserAsync(httpContext);
+
+        await AssertUserIsMissingAsync(userDto.Name, keycloakUserId);
+    }
+
     [Theory, CustomAutoData]
     public async Task DeleteUserAsync_ShouldSucceed_WithExistingUser(User user)
     {
         DbContext.Users.Add(user);
-        await InitializeKeycloakUserAsync(user);
+        var keycloakUserId = await CreateKeycloakUserAsync(user);
         await DbContext.SaveChangesAsync();
 
         var success = await Service.DeleteUserAsync(user.Name);
 
         success.Should().BeTrue();
-        var queriedUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == user.Name);
-        queriedUser.Should().BeNull();
+        await AssertUserIsMissingAsync(user.Name, keycloakUserId);
     }
 
     [Theory, CustomAutoData]
@@ -114,6 +125,17 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     {
         var success = await Service.DeleteUserAsync(username);
         success.Should().BeFalse();
+    }
+
+    private async Task AssertUserIsMissingAsync(string username, string keycloakUserId)
+    {
+        var dbUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Name == username);
+        dbUser.Should().BeNull();
+        
+        await FluentActions
+            .Awaiting(async () => await KeycloakUserClient.GetUserAsync("master", keycloakUserId))
+            .Should()
+            .ThrowAsync<KeycloakHttpClientException>();
     }
 
     private static void Match(User user, UserDto userDto)

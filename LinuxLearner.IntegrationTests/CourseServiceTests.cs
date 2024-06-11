@@ -25,14 +25,14 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         Match(course, courseDto!);
     }
 
-    [Theory, AutoData]
+    [Theory, CustomAutoData]
     public async Task GetCourseAsync_ShouldReturnNone_WhenNonExistent(Guid courseId)
     {
         var courseDto = await Service.GetCourseAsync(courseId);
         courseDto.Should().BeNull();
     }
 
-    [Theory, AutoData]
+    [Theory, CustomAutoData]
     public async Task CreateCourseAsync_ShouldPersist(CourseCreateDto courseCreateDto)
     {
         var httpContext = MakeContext(UserType.Teacher);

@@ -14,8 +14,7 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
 {
     protected readonly IServiceProvider Services;
     protected AppDbContext DbContext => Services.GetRequiredService<AppDbContext>();
-
-    private IKeycloakUserClient KeycloakUserClient => Services.GetRequiredService<IKeycloakUserClient>();
+    protected IKeycloakUserClient KeycloakUserClient => Services.GetRequiredService<IKeycloakUserClient>();
 
     private static bool _migrationComplete;
     
@@ -28,33 +27,40 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         _migrationComplete = true;
     }
 
-    protected async Task InitializeKeycloakUserAsync(User baseUser)
+    protected async Task<string> CreateKeycloakUserAsync(User baseUser)
+    {
+        return await CreateKeycloakUserAsync(baseUser.Name, baseUser.UserType);
+    }
+
+    protected async Task<string> CreateKeycloakUserAsync(string username, UserType userType = UserType.Student)
     {
         await KeycloakUserClient.CreateUserAsync("master", new UserRepresentation
         {
-            Username = baseUser.Name,
+            Username = username,
             Enabled = true
         });
 
         var userService = Services.GetRequiredService<UserService>();
         
-        var userId = await userService.GetKeycloakUserId(baseUser.Name);
+        var keycloakUserId = await userService.GetKeycloakUserId(username);
         
         var studentsId = await userService.GetKeycloakGroupId(UserType.Student);
         var teachersId = await userService.GetKeycloakGroupId(UserType.Teacher);
         var adminsId = await userService.GetKeycloakGroupId(UserType.Admin);
 
-        await KeycloakUserClient.JoinGroupAsync("master", userId, studentsId);
+        await KeycloakUserClient.JoinGroupAsync("master", keycloakUserId, studentsId);
 
-        if (baseUser.UserType != UserType.Student)
+        if (userType != UserType.Student)
         {
-            await KeycloakUserClient.JoinGroupAsync("master", userId, teachersId);
+            await KeycloakUserClient.JoinGroupAsync("master", keycloakUserId, teachersId);
         }
 
-        if (baseUser.UserType == UserType.Admin)
+        if (userType == UserType.Admin)
         {
-            await KeycloakUserClient.JoinGroupAsync("master", userId, adminsId);
+            await KeycloakUserClient.JoinGroupAsync("master", keycloakUserId, adminsId);
         }
+
+        return keycloakUserId;
     }
 
     protected static DefaultHttpContext MakeContext(UserType userType)
