@@ -15,7 +15,6 @@ public class UserService(
     IFusionCache fusionCache)
 {
     private const int MaxPageSize = 10;
-    public static bool KeycloakAvailable { private get; set; } = true;
     
     public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
     {
@@ -53,11 +52,8 @@ public class UserService(
 
         await userRepository.DeleteUserAsync(username);
 
-        if (KeycloakAvailable)
-        {
-            var userId = await GetKeycloakUserId(username);
-            await keycloakUserClient.DeleteUserAsync("master", userId);
-        }
+        var userId = await GetKeycloakUserId(username);
+        await keycloakUserClient.DeleteUserAsync("master", userId);
 
         return true;
     }
@@ -109,25 +105,24 @@ public class UserService(
 
         await userRepository.UpdateUserAsync(receiverUser);
 
-        if (KeycloakAvailable)
+        var newGroupId = await GetKeycloakGroupId(receiverUser.UserType);
+        var userId = await GetKeycloakUserId(receiverUser.Name);
+
+        await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
+
+        if (demote)
         {
-            var newGroupId = await GetKeycloakGroupId(receiverUser.UserType, metadataOptions);
-            var userId = await GetKeycloakUserId(receiverUser.Name);
-
-            await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
-
-            if (demote)
-            {
-                var oldGroupId = await GetKeycloakGroupId(oldUserType, metadataOptions);
-                await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
-            }
+            var oldGroupId = await GetKeycloakGroupId(oldUserType);
+            await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
         }
 
         return true;
     }
 
-    private async Task<string> GetKeycloakGroupId(UserType userType, IConfigurationSection metadataOptions)
+    public async Task<string> GetKeycloakGroupId(UserType userType)
     {
+        var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
+        
         var groupName = userType switch
         {
             UserType.Student => metadataOptions["StudentGroup"]!,
@@ -151,7 +146,7 @@ public class UserService(
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
-    private async Task<string> GetKeycloakUserId(string username)
+    public async Task<string> GetKeycloakUserId(string username)
     {
         return await fusionCache.GetOrSetAsync<string>(
             $"/keycloak-user-id/{username}",

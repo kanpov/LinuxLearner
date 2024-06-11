@@ -1,7 +1,6 @@
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using LinuxLearner.Database;
-using LinuxLearner.Features.Users;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -66,8 +65,6 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
 
     public async Task InitializeAsync()
     {
-        UserService.KeycloakAvailable = false;
-        
         var tasks = new List<Task>();
         
         if (PostgresContainer.State != TestcontainersStates.Running)

@@ -29,7 +29,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     [Theory]
     [InlineData(UserType.Student, "student_description")]
     [InlineData(UserType.Teacher, "teacher_description")]
-    public async Task PatchAuthorizedUserAsync_ShouldModifyDescription(UserType userType, string description)
+    public async Task PatchAuthorizedUserAsync_ShouldApplyChanges(UserType userType, string description)
     {
         var httpContext = MakeContext(userType);
         var userPatchDto = new UserPatchDto(description);
@@ -99,6 +99,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     public async Task DeleteUserAsync_ShouldSucceed_WithExistingUser(User user)
     {
         DbContext.Users.Add(user);
+        await InitializeKeycloakUserAsync(user);
         await DbContext.SaveChangesAsync();
 
         var success = await Service.DeleteUserAsync(user.Name);
