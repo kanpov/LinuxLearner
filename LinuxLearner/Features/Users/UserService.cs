@@ -18,7 +18,7 @@ public class UserService(
     public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
-        return MapToUserDto(user);
+        return await FetchUserDtoAsync(user);
     }
     
     public async Task DeleteAuthorizedUserAsync(HttpContext httpContext)
@@ -41,7 +41,7 @@ public class UserService(
     public async Task<UserDto?> GetUserAsync(Guid userId)
     {
         var user = await userRepository.GetUserAsync(userId);
-        return user is null ? null : MapToUserDto(user);
+        return user is null ? null : await FetchUserDtoAsync(user);
     }
 
     public async Task<bool> ChangeUserRoleAsync(HttpContext httpContext, Guid userId, bool demote)
@@ -136,5 +136,25 @@ public class UserService(
         return newUser;
     }
 
-    public static UserDto MapToUserDto(User user) => new(user.Id, user.UserType);
+    internal async Task<UserDto> FetchUserDtoAsync(User user)
+    {
+        return await fusionCache.GetOrSetAsync<UserDto>($"/user-dto/{user.Id}",
+            async token =>
+            {
+                var keycloakUser = await keycloakUserClient.GetUserAsync(_realm, user.Id.ToString(), false, token);
+                var description = keycloakUser.Attributes?
+                    .FirstOrDefault(a => a.Key == "description")
+                    .Value
+                    .FirstOrDefault();
+                
+                return new UserDto(
+                    user.Id,
+                    user.UserType,
+                    keycloakUser.Username!,
+                    keycloakUser.FirstName,
+                    keycloakUser.LastName,
+                    keycloakUser.Email,
+                    description);
+            });
+    }
 }

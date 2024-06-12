@@ -1,6 +1,6 @@
 // Get self user
 GET {{student-api}}/user/self
-Authorization: Bearer {{student-token}}
+Authorization: Bearer {{admin-token}}
 ###
 
 // Promote or demote
