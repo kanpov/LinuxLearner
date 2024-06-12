@@ -11,14 +11,14 @@ public class CourseService(
 {
     public async Task<CourseDto> CreateCourseAsync(HttpContext httpContext, CourseCreateDto courseCreateDto)
     {
-        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
         var course = MapToCourse(courseCreateDto);
         await courseRepository.AddCourseAsync(course);
 
         await courseParticipationService.CreateParticipationAsync(new CourseParticipation
         {
             CourseId = course.Id,
-            UserName = user.Name,
+            UserId = user.Id,
             IsCourseAdministrator = true,
             JoinTime = DateTimeOffset.UtcNow
         });

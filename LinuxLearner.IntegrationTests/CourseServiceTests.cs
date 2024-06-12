@@ -44,7 +44,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         Match(course!, courseDto);
 
         var courseParticipation = await DbContext.CourseParticipations.FirstOrDefaultAsync(
-            p => p.CourseId == course!.Id && p.UserName == httpContext.User.Identity!.Name!);
+            p => p.CourseId == course!.Id && p.UserId == GetUserIdFromContext(httpContext));
         courseParticipation.Should().NotBeNull();
         courseParticipation!.IsCourseAdministrator.Should().BeTrue();
     }
@@ -129,9 +129,9 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     {
         var httpContext = MakeContext(UserType.Teacher);
         DbContext.Add(course);
-        await UserService.GetAuthorizedUserAsync(httpContext);
+        await UserService.GetAuthorizedUserEntityAsync(httpContext);
         DbContext.Add(new CourseParticipation
-            { CourseId = course.Id, UserName = httpContext.User.Identity!.Name!, IsCourseAdministrator = isAdministrator });
+            { CourseId = course.Id, UserId = GetUserIdFromContext(httpContext), IsCourseAdministrator = isAdministrator });
         await DbContext.SaveChangesAsync();
 
         return httpContext;

@@ -1,8 +1,6 @@
 using Keycloak.AuthServices.Sdk.Admin;
 using Keycloak.AuthServices.Sdk.Admin.Requests.Groups;
-using Keycloak.AuthServices.Sdk.Admin.Requests.Users;
 using LinuxLearner.Domain;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace LinuxLearner.Features.Users;
@@ -14,71 +12,42 @@ public class UserService(
     IConfiguration configuration,
     IFusionCache fusionCache)
 {
-    private const int MaxPageSize = 10;
+    private readonly IConfigurationSection _metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
+    private readonly string _realm = configuration.GetRequiredSection("KeycloakMetadata")["Realm"]!;
     
     public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
-        return MapToUserDto(user);
+        return await FetchUserDtoAsync(user);
     }
     
-    public async Task<UserDto> PatchAuthorizedUserAsync(HttpContext httpContext, UserPatchDto userPatchDto)
-    {
-        var user = await GetAuthorizedUserEntityAsync(httpContext);
-        return (await PatchUserAsync(user.Name, userPatchDto))!;
-    }
-
-    public async Task<UserDto?> PatchUserAsync(string username, UserPatchDto userPatchDto)
-    {
-        var user = await userRepository.GetUserAsync(username);
-        if (user is null) return null;
-        
-        ProjectUserPatchDto(user, userPatchDto);
-        await userRepository.UpdateUserAsync(user);
-
-        return MapToUserDto(user);
-    }
-
     public async Task DeleteAuthorizedUserAsync(HttpContext httpContext)
     {
         var user = await GetAuthorizedUserEntityAsync(httpContext);
-        await DeleteUserAsync(user.Name);
+        await DeleteUserAsync(user.Id);
     }
     
-    public async Task<bool> DeleteUserAsync(string username)
+    public async Task<bool> DeleteUserAsync(Guid userId)
     {
-        var user = await userRepository.GetUserAsync(username);
+        var user = await userRepository.GetUserAsync(userId);
         if (user is null) return false;
 
-        await userRepository.DeleteUserAsync(username);
-
-        var userId = await GetKeycloakUserId(username);
-        await keycloakUserClient.DeleteUserAsync("master", userId);
+        await userRepository.DeleteUserAsync(userId);
+        await keycloakUserClient.DeleteUserAsync("master", userId.ToString());
 
         return true;
     }
 
-    public async Task<UserDto?> GetUserAsync(string username)
+    public async Task<UserDto?> GetUserAsync(Guid userId)
     {
-        var user = await userRepository.GetUserAsync(username);
-        return user is null ? null : MapToUserDto(user);
+        var user = await userRepository.GetUserAsync(userId);
+        return user is null ? null : await FetchUserDtoAsync(user);
     }
 
-    public async Task<IEnumerable<UserDto>> GetUsersAsync(int page, int pageSize)
-    {
-        if (pageSize > MaxPageSize) pageSize = MaxPageSize;
-
-        var users = await userRepository.GetUsersAsync(page, pageSize);
-        return users.Select(MapToUserDto);
-    }
-
-    public async Task<bool> ChangeUserRoleAsync(HttpContext httpContext, string username, bool demote)
+    public async Task<bool> ChangeUserRoleAsync(HttpContext httpContext, Guid userId, bool demote)
     {
         var senderUser = await GetAuthorizedUserEntityAsync(httpContext);
-        var receiverUser = await userRepository.GetUserAsync(username);
-        
-        var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
-        var realmId = metadataOptions["Realm"]!;
+        var receiverUser = await userRepository.GetUserAsync(userId);
         
         if (receiverUser is null || senderUser.UserType <= receiverUser.UserType) return false;
         if (demote && receiverUser.UserType == UserType.Student) return false;
@@ -106,14 +75,13 @@ public class UserService(
         await userRepository.UpdateUserAsync(receiverUser);
 
         var newGroupId = await GetKeycloakGroupId(receiverUser.UserType);
-        var userId = await GetKeycloakUserId(receiverUser.Name);
 
-        await keycloakUserClient.JoinGroupAsync(realmId, userId, newGroupId);
+        await keycloakUserClient.JoinGroupAsync(_realm, userId.ToString(), newGroupId);
 
         if (demote)
         {
             var oldGroupId = await GetKeycloakGroupId(oldUserType);
-            await keycloakUserClient.LeaveGroupAsync(realmId, userId, oldGroupId);
+            await keycloakUserClient.LeaveGroupAsync(_realm, userId.ToString(), oldGroupId);
         }
 
         return true;
@@ -121,20 +89,18 @@ public class UserService(
 
     public async Task<string> GetKeycloakGroupId(UserType userType)
     {
-        var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
-        
         var groupName = userType switch
         {
-            UserType.Student => metadataOptions["StudentGroup"]!,
-            UserType.Teacher => metadataOptions["TeacherGroup"]!,
-            _ => metadataOptions["AdminGroup"]!
+            UserType.Student => _metadataOptions["StudentGroup"]!,
+            UserType.Teacher => _metadataOptions["TeacherGroup"]!,
+            _ => _metadataOptions["AdminGroup"]!
         };
         return await fusionCache.GetOrSetAsync<string>(
             $"/keycloak-group-id/{groupName}",
             async token =>
             {
                 var queriedGroups = await keycloakGroupClient.GetGroupsAsync(
-                    "master", new GetGroupsRequestParameters
+                    _realm, new GetGroupsRequestParameters
                     {
                         Search = groupName,
                         Exact = false,
@@ -146,56 +112,49 @@ public class UserService(
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
-    public async Task<string> GetKeycloakUserId(string username)
-    {
-        return await fusionCache.GetOrSetAsync<string>(
-            $"/keycloak-user-id/{username}",
-            async token =>
-            {
-                var queriedUsers = await keycloakUserClient.GetUsersAsync("master",
-                    new GetUsersRequestParameters
-                    {
-                        Max = 1,
-                        Username = username,
-                        Exact = true,
-                        BriefRepresentation = true
-                    }, token);
-                return queriedUsers.First().Id!;
-            },
-            new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
-    }
-
-    private async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
+    public async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
     {
         var claimsPrincipal = httpContext.User;
-        
-        var username = claimsPrincipal.Identity!.Name!;
-        var user = await userRepository.GetUserAsync(username);
-        var claimValue = claimsPrincipal.Claims.First(c => c.Type == "resource_access").Value;
-        var userType = UserType.Admin;
-        
-        if (claimValue.Contains("student")) userType = UserType.Student;
-        else if (claimValue.Contains("teacher")) userType = UserType.Teacher;
+
+        var userId = Guid.Parse(claimsPrincipal.Claims.First(c => c.Type.EndsWith("nameidentifier")).Value);
+        var user = await userRepository.GetUserAsync(userId);
+        var resourceAccess = claimsPrincipal.Claims.First(c => c.Type == "resource_access").Value;
+        var userType = UserType.Student;
+
+        if (resourceAccess.Contains("teacher")) userType = UserType.Teacher;
+        if (resourceAccess.Contains("admin")) userType = UserType.Admin;
 
         if (user is not null) return user;
 
         var newUser = new User
         {
-            Name = username,
-            UserType = userType,
-            Description = null,
-            RegistrationTime = DateTimeOffset.UtcNow
+            Id = userId,
+            UserType = userType
         };
         await userRepository.AddUserAsync(newUser);
 
         return newUser;
     }
 
-    public static UserDto MapToUserDto(User user) =>
-        new(user.Name, user.UserType, user.Description, user.RegistrationTime);
-
-    private static void ProjectUserPatchDto(User user, UserPatchDto userPatchDto)
+    internal async Task<UserDto> FetchUserDtoAsync(User user)
     {
-        user.Description = userPatchDto.Description;
+        return await fusionCache.GetOrSetAsync<UserDto>($"/user-dto/{user.Id}",
+            async token =>
+            {
+                var keycloakUser = await keycloakUserClient.GetUserAsync(_realm, user.Id.ToString(), false, token);
+                var description = keycloakUser.Attributes?
+                    .FirstOrDefault(a => a.Key == "description")
+                    .Value
+                    .FirstOrDefault();
+                
+                return new UserDto(
+                    user.Id,
+                    user.UserType,
+                    keycloakUser.Username!,
+                    keycloakUser.FirstName,
+                    keycloakUser.LastName,
+                    keycloakUser.Email,
+                    description);
+            });
     }
 }

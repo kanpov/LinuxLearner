@@ -6,73 +6,73 @@ public static class CourseParticipationEndpoints
 {
     public static void Map(RouteGroupBuilder studentApi, RouteGroupBuilder teacherApi, RouteGroupBuilder adminApi)
     {
-        studentApi.MapGet("/participations/course/{id:guid}/user/{username}", GetParticipation);
-        studentApi.MapGet("/participations/course/{id:guid}", GetParticipationsForCourse);
-        studentApi.MapGet("/participations/user/{username}", GetParticipationsForUser);
-        studentApi.MapDelete("/participations/course/{id:guid}/user/self", DeleteOwnParticipation);
+        studentApi.MapGet("/participations/course/{courseId:guid}/user/{userId:guid}", GetParticipation);
+        studentApi.MapGet("/participations/course/{courseId:guid}", GetParticipationsForCourse);
+        studentApi.MapGet("/participations/user/{userId:guid}", GetParticipationsForUser);
+        studentApi.MapDelete("/participations/course/{courseId:guid}/user/self", DeleteOwnParticipation);
 
-        teacherApi.MapDelete("/participations/course/{id:guid}/user/{username}", DeleteParticipation);
+        teacherApi.MapDelete("/participations/course/{courseId:guid}/user/{userId:guid}", DeleteParticipation);
         
-        adminApi.MapPut("/participations/course/{id:guid}/user/{username}/administration/grant", GrantCourseAdministration);
-        adminApi.MapPut("/participations/course/{id:guid}/user/{username}/administration/revoke", RevokeCourseAdministration);
-        adminApi.MapDelete("/participations/course/{id:guid}/user/{username}/force", ForceDeleteParticipation);
+        adminApi.MapPut("/participations/course/{courseId:guid}/user/{userId:guid}/administration/grant", GrantCourseAdministration);
+        adminApi.MapPut("/participations/course/{courseId:guid}/user/{userId:guid}/administration/revoke", RevokeCourseAdministration);
+        adminApi.MapDelete("/participations/course/{courseId:guid}/user/{userId:guid}/force", ForceDeleteParticipation);
     }
     
     private static async Task<Results<NotFound, Ok<CourseParticipationDto>>> GetParticipation(
-        CourseParticipationService courseParticipationService, Guid id, string username)
+        CourseParticipationService courseParticipationService, Guid courseId, Guid userId)
     {
-        var courseUserDto = await courseParticipationService.GetParticipationAsync(id, username);
+        var courseUserDto = await courseParticipationService.GetParticipationAsync(courseId, userId);
         return courseUserDto is null ? TypedResults.NotFound() : TypedResults.Ok(courseUserDto);
     }
 
     private static async Task<Results<NotFound, Ok<IEnumerable<CourseParticipationDto>>>> GetParticipationsForCourse(
-        CourseParticipationService courseParticipationService, HttpContext httpContext, Guid id)
+        CourseParticipationService courseParticipationService, HttpContext httpContext, Guid courseId)
     {
-        var courseParticipationDtos = await courseParticipationService.GetParticipationsForCourseAsync(httpContext, id);
+        var courseParticipationDtos = await courseParticipationService.GetParticipationsForCourseAsync(httpContext, courseId);
         return courseParticipationDtos is null ? TypedResults.NotFound() : TypedResults.Ok(courseParticipationDtos);
     }
     
     private static async Task<Ok<IEnumerable<CourseParticipationDto>>> GetParticipationsForUser(
-        CourseParticipationService courseParticipationService, string username)
+        CourseParticipationService courseParticipationService, Guid userId)
     {
-        var courseParticipationDtos = await courseParticipationService.GetParticipationsForUserAsync(username);
+        var courseParticipationDtos = await courseParticipationService.GetParticipationsForUserAsync(userId);
         return TypedResults.Ok(courseParticipationDtos);
     }
     
     private static async Task<Results<NotFound, NoContent>> GrantCourseAdministration(
-        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid id, string username)
+        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid courseId, Guid userId)
     {
-        var success = await courseParticipationService.ChangeAdministrationOnCourseAsync(httpContext, id, username,
+        var success = await courseParticipationService.ChangeAdministrationOnCourseAsync(httpContext, courseId, userId,
                 isCourseAdministrator: true);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
     
     private static async Task<Results<NotFound, NoContent>> RevokeCourseAdministration(
-        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid id, string username)
+        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid courseId, Guid userId)
     {
-        var success = await courseParticipationService.ChangeAdministrationOnCourseAsync(httpContext, id,
-            username, isCourseAdministrator: false);
+        var success = await courseParticipationService.ChangeAdministrationOnCourseAsync(httpContext, courseId,
+            userId, isCourseAdministrator: false);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     private static async Task<Results<NotFound, NoContent>> DeleteOwnParticipation(
-        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid id)
+        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid courseId)
     {
-        var success = await courseParticipationService.DeleteOwnParticipationAsync(httpContext, id);
+        var success = await courseParticipationService.DeleteOwnParticipationAsync(httpContext, courseId);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     private static async Task<Results<NotFound, NoContent>> DeleteParticipation(
-        HttpContext httpContext, CourseParticipationService courseParticipationService, string username, Guid id)
+        HttpContext httpContext, CourseParticipationService courseParticipationService, Guid userId, Guid courseId)
     {
-        var success = await courseParticipationService.DeleteParticipationAsync(httpContext, id, username);
+        var success = await courseParticipationService.DeleteParticipationAsync(httpContext, courseId, userId);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     private static async Task<Results<NotFound, NoContent>> ForceDeleteParticipation(
-        CourseParticipationService courseParticipationService, string username, Guid id)
+        CourseParticipationService courseParticipationService, Guid userId, Guid courseId)
     {
-        var success = await courseParticipationService.ForceDeleteParticipationAsync(id, username);
+        var success = await courseParticipationService.ForceDeleteParticipationAsync(courseId, userId);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

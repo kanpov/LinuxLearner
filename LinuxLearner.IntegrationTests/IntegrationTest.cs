@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Keycloak.AuthServices.Sdk.Admin;
 using Keycloak.AuthServices.Sdk.Admin.Models;
+using Keycloak.AuthServices.Sdk.Admin.Requests.Users;
 using LinuxLearner.Database;
 using LinuxLearner.Domain;
 using LinuxLearner.Features.Users;
@@ -27,13 +28,14 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         _migrationComplete = true;
     }
 
-    protected async Task<string> CreateKeycloakUserAsync(User baseUser)
+    protected async Task<Guid> CreateKeycloakUserAsync(User baseUser)
     {
-        return await CreateKeycloakUserAsync(baseUser.Name, baseUser.UserType);
+        return await CreateKeycloakUserAsync(baseUser.UserType);
     }
 
-    protected async Task<string> CreateKeycloakUserAsync(string username, UserType userType = UserType.Student)
+    protected async Task<Guid> CreateKeycloakUserAsync(UserType userType = UserType.Student)
     {
+        var username = "test-user-" + Guid.NewGuid();
         await KeycloakUserClient.CreateUserAsync("master", new UserRepresentation
         {
             Username = username,
@@ -41,8 +43,15 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         });
 
         var userService = Services.GetRequiredService<UserService>();
-        
-        var keycloakUserId = await userService.GetKeycloakUserId(username);
+
+        var matchingUsers = await KeycloakUserClient.GetUsersAsync("master", new GetUsersRequestParameters
+        {
+            Username = username,
+            Exact = true,
+            Max = 1,
+            BriefRepresentation = true
+        });
+        var keycloakUserId = matchingUsers.First().Id!;
         
         var studentsId = await userService.GetKeycloakGroupId(UserType.Student);
         var teachersId = await userService.GetKeycloakGroupId(UserType.Teacher);
@@ -60,30 +69,47 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
             await KeycloakUserClient.JoinGroupAsync("master", keycloakUserId, adminsId);
         }
 
-        return keycloakUserId;
+        return Guid.Parse(keycloakUserId);
     }
 
-    protected static DefaultHttpContext MakeContext(UserType userType)
+    protected async Task<DefaultHttpContext> MakeContextAndUserAsync(UserType userType)
+    {
+        var keycloakUserId = await CreateKeycloakUserAsync(userType);
+        var httpContext = MakeContext(userType, keycloakUserId);
+        return httpContext;
+    }
+
+    protected static DefaultHttpContext MakeContext(UserType userType, Guid? userId = null)
     {
         return userType switch
         {
-            UserType.Student => MakeContext("student"),
-            UserType.Teacher => MakeContext("teacher"),
-            UserType.Admin => MakeContext("admin"),
+            UserType.Student => MakeContext("student", userId),
+            UserType.Teacher => MakeContext("teacher", userId),
+            UserType.Admin => MakeContext("admin", userId),
             _ => throw new ArgumentOutOfRangeException(nameof(userType), userType, null)
         };
     }
-    
-    private static DefaultHttpContext MakeContext(string role)
+
+    protected static Guid GetUserIdFromContext(HttpContext httpContext)
     {
+        var stringValue = httpContext.User.Claims.First(c => c.Type.EndsWith("nameidentifier")).Value;
+        return Guid.Parse(stringValue);
+    }
+    
+    private static DefaultHttpContext MakeContext(string role, Guid? userId = null)
+    {
+        userId ??= Guid.NewGuid(); // fake the user ID to avoid creating actual Keycloak accounts when not necessary
         var httpContext = new DefaultHttpContext();
         
         var claimsPrincipal = new ClaimsPrincipal();
-        claimsPrincipal.AddIdentity(new ClaimsIdentity(
+        var identity = new ClaimsIdentity(
         [
             new Claim("preferred_username", role + Random.Shared.Next(100000, 1000000)),
-            new Claim("resource_access", role)
-        ], "Bearer", "preferred_username", "resource_access"));
+            new Claim("resource_access", role),
+            new Claim("nameidentifier", userId.ToString()!)
+        ], "Bearer", "preferred_username", "resource_access");
+
+        claimsPrincipal.AddIdentity(identity);
 
         httpContext.User = claimsPrincipal;
 

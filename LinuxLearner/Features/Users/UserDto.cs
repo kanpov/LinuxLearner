@@ -3,7 +3,10 @@ using LinuxLearner.Domain;
 namespace LinuxLearner.Features.Users;
 
 public record UserDto(
-    string Name,
+    Guid Id,
     UserType UserType,
-    string? Description,
-    DateTimeOffset RegistrationTime);
+    string Username,
+    string? FirstName,
+    string? LastName,
+    string? Email,
+    string? Description);
