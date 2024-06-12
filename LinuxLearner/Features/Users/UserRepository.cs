@@ -7,13 +7,13 @@ namespace LinuxLearner.Features.Users;
 
 public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
-    public async Task<User?> GetUserAsync(string username)
+    public async Task<User?> GetUserAsync(Guid userId)
     {
         return await fusionCache.GetOrSetAsync<User?>(
-            $"/user/{username}",
+            $"/user/{userId}",
             async token =>
             {
-                return await dbContext.Users.FirstOrDefaultAsync(u => u.Name == username, token);
+                return await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, token);
             });
     }
 
@@ -26,25 +26,15 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
     public async Task UpdateUserAsync(User user)
     {
         await dbContext.SaveChangesAsync();
-        
-        await fusionCache.SetAsync($"/user/{user.Name}", user);
+        await fusionCache.SetAsync($"/user/{user.Id}", user);
     }
 
-    public async Task DeleteUserAsync(string username)
+    public async Task DeleteUserAsync(Guid userId)
     {
         await dbContext.Users
-            .Where(u => u.Name == username)
+            .Where(u => u.Id == userId)
             .ExecuteDeleteAsync();
 
-        await fusionCache.RemoveAsync($"/user/{username}");
-    }
-
-    public async Task<IEnumerable<User>> GetUsersAsync(int page, int pageSize)
-    {
-        return await dbContext.Users
-            .OrderBy(u => u.RegistrationTime)
-            .Skip(pageSize * (page - 1))
-            .Take(pageSize)
-            .ToListAsync();
+        await fusionCache.RemoveAsync($"/user/{userId}");
     }
 }

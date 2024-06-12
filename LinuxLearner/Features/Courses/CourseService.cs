@@ -18,7 +18,7 @@ public class CourseService(
         await courseParticipationService.CreateParticipationAsync(new CourseParticipation
         {
             CourseId = course.Id,
-            UserName = user.Name,
+            UserId = user.Id,
             IsCourseAdministrator = true,
             JoinTime = DateTimeOffset.UtcNow
         });

@@ -1,8 +1,2 @@
-// Patch user as admin
-PATCH {{admin-api}}/users/samplestudent
-Authorization: Bearer {{admin-token}}
-Content-Type: application/json
-
-{
-  "description": "Yo Mr. White, we got a new description"
-}
+GET {{student-api}}/user/self
+Authorization: Bearer {{student-token}}
