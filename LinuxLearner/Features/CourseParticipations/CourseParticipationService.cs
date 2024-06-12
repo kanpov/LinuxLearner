@@ -14,15 +14,15 @@ public class CourseParticipationService(
     }
     
     public async Task<bool> ChangeAdministrationOnCourseAsync(
-        HttpContext httpContext, Guid courseId, string userName, bool isCourseAdministrator)
+        HttpContext httpContext, Guid courseId, Guid userId, bool isCourseAdministrator)
     {
         var grantor = await GetAdministrativeParticipationAsync(httpContext, courseId);
         if (grantor is null) return false;
 
-        var grantee = await courseParticipationRepository.GetParticipationAsync(courseId, userName);
+        var grantee = await courseParticipationRepository.GetParticipationAsync(courseId, userId);
         if (grantee is null
             || grantee is { User.UserType: UserType.Student }
-            || grantee.UserName == grantor.UserName) return false;
+            || grantee.UserId == grantor.UserId) return false;
 
         grantee.IsCourseAdministrator = isCourseAdministrator;
         await courseParticipationRepository.UpdateParticipationAsync(grantee);
@@ -30,32 +30,32 @@ public class CourseParticipationService(
         return true;
     }
 
-    public async Task<CourseParticipationDto?> GetParticipationAsync(Guid courseId, string userName)
+    public async Task<CourseParticipationDto?> GetParticipationAsync(Guid courseId, Guid userId)
     {
-        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, userName);
+        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, userId);
         return participation is null ? null : MapToCourseParticipationDto(participation);
     }
 
     public async Task<IEnumerable<CourseParticipationDto>?> GetParticipationsForCourseAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
-        var participationOfSelf = await courseParticipationRepository.GetParticipationAsync(courseId, user.Name);
+        var participationOfSelf = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
         if (participationOfSelf is null) return null;
 
         var participations = await courseParticipationRepository.GetParticipationsForCourseAsync(courseId);
         return participations.Select(MapToCourseParticipationDto);
     }
 
-    public async Task<IEnumerable<CourseParticipationDto>> GetParticipationsForUserAsync(string username)
+    public async Task<IEnumerable<CourseParticipationDto>> GetParticipationsForUserAsync(Guid userId)
     {
-        var participations = await courseParticipationRepository.GetParticipationsForUserAsync(username);
+        var participations = await courseParticipationRepository.GetParticipationsForUserAsync(userId);
         return participations.Select(MapToCourseParticipationDto);
     }
 
     public async Task<CourseParticipation?> GetAdministrativeParticipationAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
-        var courseUser = await courseParticipationRepository.GetParticipationAsync(courseId, user.Name);
+        var courseUser = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
 
         return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
     }
@@ -63,24 +63,24 @@ public class CourseParticipationService(
     public async Task<bool> DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
-        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Name);
+        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
         if (participation is null) return false;
 
         await courseParticipationRepository.DeleteParticipationAsync(participation);
         return true;
     }
 
-    public async Task<bool> DeleteParticipationAsync(HttpContext httpContext, Guid courseId, string username)
+    public async Task<bool> DeleteParticipationAsync(HttpContext httpContext, Guid courseId, Guid userId)
     {
         var administrativeParticipation = await GetAdministrativeParticipationAsync(httpContext, courseId);
         if (administrativeParticipation is null) return false;
 
-        return await ForceDeleteParticipationAsync(courseId, username);
+        return await ForceDeleteParticipationAsync(courseId, userId);
     }
 
-    public async Task<bool> ForceDeleteParticipationAsync(Guid courseId, string username)
+    public async Task<bool> ForceDeleteParticipationAsync(Guid courseId, Guid userId)
     {
-        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, username);
+        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, userId);
         if (participation is null) return false;
 
         await courseParticipationRepository.DeleteParticipationAsync(participation);

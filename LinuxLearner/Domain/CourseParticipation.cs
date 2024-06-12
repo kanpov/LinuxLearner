@@ -4,7 +4,7 @@ namespace LinuxLearner.Domain;
 
 public class CourseParticipation
 {
-    public string UserName { get; set; }
+    public Guid UserId { get; set; }
     public Guid CourseId { get; set; }
     
     [JsonIgnore] public User User { get; set; } = null!;
