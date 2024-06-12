@@ -38,7 +38,7 @@ public class CourseParticipationService(
 
     public async Task<IEnumerable<CourseParticipationDto>?> GetParticipationsForCourseAsync(HttpContext httpContext, Guid courseId)
     {
-        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
         var participationOfSelf = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
         if (participationOfSelf is null) return null;
 
@@ -54,7 +54,7 @@ public class CourseParticipationService(
 
     public async Task<CourseParticipation?> GetAdministrativeParticipationAsync(HttpContext httpContext, Guid courseId)
     {
-        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
         var courseUser = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
 
         return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
@@ -62,7 +62,7 @@ public class CourseParticipationService(
 
     public async Task<bool> DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
     {
-        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
         var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
         if (participation is null) return false;
 

@@ -112,7 +112,7 @@ public class UserService(
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
-    private async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
+    public async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
     {
         var claimsPrincipal = httpContext.User;
 

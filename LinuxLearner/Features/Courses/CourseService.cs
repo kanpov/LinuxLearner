@@ -11,7 +11,7 @@ public class CourseService(
 {
     public async Task<CourseDto> CreateCourseAsync(HttpContext httpContext, CourseCreateDto courseCreateDto)
     {
-        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
         var course = MapToCourse(courseCreateDto);
         await courseRepository.AddCourseAsync(course);
 
