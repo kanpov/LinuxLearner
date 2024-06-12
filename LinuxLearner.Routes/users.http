@@ -1,2 +1,8 @@
+// Get self user
 GET {{student-api}}/user/self
 Authorization: Bearer {{student-token}}
+###
+
+// Promote or demote
+PUT {{teacher-api}}/users/bc0ca9fb-9fa5-4f5c-92c9-547c6b2783fe/demote
+Authorization: Bearer {{admin-token}}

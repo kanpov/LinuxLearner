@@ -1,8 +1,6 @@
 using Keycloak.AuthServices.Sdk.Admin;
 using Keycloak.AuthServices.Sdk.Admin.Requests.Groups;
-using Keycloak.AuthServices.Sdk.Admin.Requests.Users;
 using LinuxLearner.Domain;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace LinuxLearner.Features.Users;
@@ -14,7 +12,8 @@ public class UserService(
     IConfiguration configuration,
     IFusionCache fusionCache)
 {
-    private const int MaxPageSize = 10;
+    private readonly IConfigurationSection _metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
+    private readonly string _realm = configuration.GetRequiredSection("KeycloakMetadata")["Realm"]!;
     
     public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
     {
@@ -50,9 +49,6 @@ public class UserService(
         var senderUser = await GetAuthorizedUserEntityAsync(httpContext);
         var receiverUser = await userRepository.GetUserAsync(userId);
         
-        var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
-        var realmId = metadataOptions["Realm"]!;
-        
         if (receiverUser is null || senderUser.UserType <= receiverUser.UserType) return false;
         if (demote && receiverUser.UserType == UserType.Student) return false;
         if (!demote && receiverUser.UserType == UserType.Admin) return false;
@@ -80,12 +76,12 @@ public class UserService(
 
         var newGroupId = await GetKeycloakGroupId(receiverUser.UserType);
 
-        await keycloakUserClient.JoinGroupAsync(realmId, userId.ToString(), newGroupId);
+        await keycloakUserClient.JoinGroupAsync(_realm, userId.ToString(), newGroupId);
 
         if (demote)
         {
             var oldGroupId = await GetKeycloakGroupId(oldUserType);
-            await keycloakUserClient.LeaveGroupAsync(realmId, userId.ToString(), oldGroupId);
+            await keycloakUserClient.LeaveGroupAsync(_realm, userId.ToString(), oldGroupId);
         }
 
         return true;
@@ -93,20 +89,18 @@ public class UserService(
 
     public async Task<string> GetKeycloakGroupId(UserType userType)
     {
-        var metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
-        
         var groupName = userType switch
         {
-            UserType.Student => metadataOptions["StudentGroup"]!,
-            UserType.Teacher => metadataOptions["TeacherGroup"]!,
-            _ => metadataOptions["AdminGroup"]!
+            UserType.Student => _metadataOptions["StudentGroup"]!,
+            UserType.Teacher => _metadataOptions["TeacherGroup"]!,
+            _ => _metadataOptions["AdminGroup"]!
         };
         return await fusionCache.GetOrSetAsync<string>(
             $"/keycloak-group-id/{groupName}",
             async token =>
             {
                 var queriedGroups = await keycloakGroupClient.GetGroupsAsync(
-                    "master", new GetGroupsRequestParameters
+                    _realm, new GetGroupsRequestParameters
                     {
                         Search = groupName,
                         Exact = false,
@@ -118,25 +112,6 @@ public class UserService(
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
-    public async Task<string> GetKeycloakUserId(string username)
-    {
-        return await fusionCache.GetOrSetAsync<string>(
-            $"/keycloak-user-id/{username}",
-            async token =>
-            {
-                var queriedUsers = await keycloakUserClient.GetUsersAsync("master",
-                    new GetUsersRequestParameters
-                    {
-                        Max = 1,
-                        Username = username,
-                        Exact = true,
-                        BriefRepresentation = true
-                    }, token);
-                return queriedUsers.First().Id!;
-            },
-            new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
-    }
-
     private async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
     {
         var claimsPrincipal = httpContext.User;
@@ -144,10 +119,10 @@ public class UserService(
         var userId = Guid.Parse(claimsPrincipal.Claims.First(c => c.Type.EndsWith("nameidentifier")).Value);
         var user = await userRepository.GetUserAsync(userId);
         var resourceAccess = claimsPrincipal.Claims.First(c => c.Type == "resource_access").Value;
-        var userType = UserType.Admin;
-        
-        if (resourceAccess.Contains("student")) userType = UserType.Student;
-        else if (resourceAccess.Contains("teacher")) userType = UserType.Teacher;
+        var userType = UserType.Student;
+
+        if (resourceAccess.Contains("teacher")) userType = UserType.Teacher;
+        if (resourceAccess.Contains("admin")) userType = UserType.Admin;
 
         if (user is not null) return user;
 
