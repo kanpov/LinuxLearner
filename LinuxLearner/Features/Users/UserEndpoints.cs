@@ -40,6 +40,7 @@ public static class UserEndpoints
         if (userDto is null) return TypedResults.NotFound();
         return TypedResults.Ok(userDto);
     }
+    
     private static async Task<Results<ForbidHttpResult, NoContent>> PromoteUser(HttpContext httpContext,
         UserService userService, Guid userId)
     {

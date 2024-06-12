@@ -151,10 +151,5 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         user.UserType.Should().Be(userDto.UserType);
     }
 
-    private static void Match(UserDto userDto, UserPatchDto userPatchDto)
-    {
-        userDto.Description.Should().Be(userPatchDto.Description);
-    }
-    
     // investigate the possibility of connecting to keycloak so that DELETE endpoints also become testable
 }

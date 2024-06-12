@@ -55,9 +55,9 @@ public class CourseParticipationService(
     public async Task<CourseParticipation?> GetAdministrativeParticipationAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
-        var courseUser = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
+        var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
 
-        return courseUser is { IsCourseAdministrator: true } ? courseUser : null;
+        return participation is { IsCourseAdministrator: true } ? participation : null;
     }
 
     public async Task<bool> DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)

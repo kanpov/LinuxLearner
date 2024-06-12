@@ -98,6 +98,7 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
     
     private static DefaultHttpContext MakeContext(string role, Guid? userId = null)
     {
+        userId ??= Guid.NewGuid(); // fake the user ID to avoid creating actual Keycloak accounts when not necessary
         var httpContext = new DefaultHttpContext();
         
         var claimsPrincipal = new ClaimsPrincipal();
@@ -105,12 +106,9 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         [
             new Claim("preferred_username", role + Random.Shared.Next(100000, 1000000)),
             new Claim("resource_access", role),
+            new Claim("nameidentifier", userId.ToString()!)
         ], "Bearer", "preferred_username", "resource_access");
-        if (userId is not null)
-        {
-            identity.AddClaim(new Claim("nameidentifier", userId.ToString()!));
-        }
-        
+
         claimsPrincipal.AddIdentity(identity);
 
         httpContext.User = claimsPrincipal;

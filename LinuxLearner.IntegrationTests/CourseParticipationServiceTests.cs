@@ -46,7 +46,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
     [Theory, CustomAutoData]
     public async Task GetParticipationAsync_ShouldReturnOne_WhenItExists(Course course, Fixture fixture)
     {
-        var (_, participations, _) = await ArrangeParticipations(course, fixture);
+        var (_, participations, _) = await ArrangeParticipations(course, fixture, withRealUsers: true);
         var participation = participations.First();
 
         var participationDto =
@@ -58,7 +58,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
     [Theory, CustomAutoData]
     public async Task GetParticipationsForCourseAsync_ShouldReturnMatches(Course course, Fixture fixture)
     {
-        var (httpContext, participations, _) = await ArrangeParticipations(course, fixture);
+        var (httpContext, participations, _) = await ArrangeParticipations(course, fixture, withRealUsers: true);
         var participationDtos =
             await CourseParticipationService.GetParticipationsForCourseAsync(httpContext, course.Id);
         
@@ -73,10 +73,20 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
     }
 
     private async Task<(HttpContext, List<CourseParticipation>, Guid)> ArrangeParticipations(
-        Course course, Fixture fixture, int amount = 1, bool ownerIsAdmin = true, UserType ownerType = UserType.Teacher)
+        Course course, Fixture fixture, int amount = 1, bool ownerIsAdmin = true, UserType ownerType = UserType.Teacher,
+        bool withRealUsers = false)
     {
-        var httpContext = MakeContext(ownerType);
-        await UserService.GetAuthorizedUserAsync(httpContext);
+        DefaultHttpContext httpContext;
+        if (withRealUsers)
+        {
+            httpContext = await MakeContextAndUserAsync(ownerType);
+        }
+        else
+        {
+            httpContext = MakeContext(ownerType);
+        }
+        
+        await UserService.GetAuthorizedUserEntityAsync(httpContext);
         
         DbContext.Courses.Add(course);
         DbContext.Add(new CourseParticipation
@@ -87,6 +97,10 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         {
             var user = fixture.Create<User>();
             user.UserType = UserType.Teacher;
+            if (withRealUsers)
+            {
+                user.Id = await CreateKeycloakUserAsync(user.UserType);
+            }
             DbContext.Add(user);
 
             var participation = new CourseParticipation { CourseId = course.Id, UserId = user.Id, IsCourseAdministrator = false };
