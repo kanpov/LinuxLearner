@@ -15,7 +15,7 @@ public class CourseCreateDtoValidator : AbstractValidator<CourseCreateDto>
             .MinimumLength(10)
             .MaximumLength(30);
 
-        When(c => c.Description != null, () =>
+        When(c => c.Description is not null, () =>
         {
             RuleFor(c => c.Description)
                 .MinimumLength(10)

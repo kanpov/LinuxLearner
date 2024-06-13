@@ -11,7 +11,7 @@ public class CourseInviteConfiguration : IEntityTypeConfiguration<CourseInvite>
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.UsageLimit).IsRequired();
-
+        builder.Property(i => i.UsageAmount).IsRequired();
         builder.Property(i => i.CourseId).IsRequired();
 
         builder.ToTable("CourseInvites");

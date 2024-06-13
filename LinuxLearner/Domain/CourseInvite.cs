@@ -9,4 +9,5 @@ public class CourseInvite
 
     public DateTimeOffset? ExpirationTime { get; set; }
     public int UsageLimit { get; set; }
+    public int UsageAmount { get; set; }
 }
