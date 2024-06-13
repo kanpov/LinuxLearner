@@ -179,6 +179,7 @@ public class UserService(
                     keycloakUser.LastName,
                     keycloakUser.Email,
                     description);
-            });
+            },
+            new FusionCacheEntryOptions(TimeSpan.FromMinutes(30)));
     }
 }
