@@ -10,10 +10,13 @@ public static class CourseInviteEndpoints
     {
         studentApi.MapGet("/courses/{courseId:guid}/invites/{inviteId:guid}", GetInvite)
             .WithName(nameof(GetInvite));
+        studentApi.MapPost("/courses/{courseId:guid}/join/without-invite", JoinCourseWithoutInvite);
+        studentApi.MapPost("/courses/{courseId:guid}/leave", LeaveCourse);
         
         teacherApi.MapPost("/courses/{courseId:guid}/invites", CreateInvite);
         teacherApi.MapPatch("/courses/{courseId:guid}/invites/{inviteId:guid}", PatchInvite);
         teacherApi.MapDelete("/courses/{courseId:guid}/invites/{inviteId:guid}", DeleteInvite);
+        teacherApi.MapGet("/courses/{courseId:guid}/invites", GetInvitesForCourse);
     }
 
     private static async Task<Results<ValidationProblem, NotFound, CreatedAtRoute<CourseInviteDto>>> CreateInvite(
@@ -52,5 +55,26 @@ public static class CourseInviteEndpoints
     {
         var success = await courseInviteService.DeleteInviteAsync(httpContext, courseId, inviteId);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<NotFound, Ok<IEnumerable<CourseInviteDto>>>> GetInvitesForCourse(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId)
+    {
+        var inviteDtos = await courseInviteService.GetInvitesForCourseAsync(httpContext, courseId);
+        return inviteDtos is null ? TypedResults.NotFound() : TypedResults.Ok(inviteDtos);
+    }
+
+    private static async Task<Results<NotFound, NoContent>> JoinCourseWithoutInvite(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId)
+    {
+        var success = await courseInviteService.JoinCourseWithoutInviteAsync(httpContext, courseId);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<ForbidHttpResult, NoContent>> LeaveCourse(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId)
+    {
+        var success = await courseInviteService.LeaveCourseAsync(httpContext, courseId);
+        return success ? TypedResults.NoContent() : TypedResults.Forbid();
     }
 }

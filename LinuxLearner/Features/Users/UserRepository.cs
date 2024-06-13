@@ -9,14 +9,12 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
     public async Task<User?> GetUserAsync(Guid userId)
     {
-        var user = await fusionCache.GetOrSetAsync<User?>(
+        return await fusionCache.GetOrSetAsync<User?>(
             $"/user/{userId}",
             async token =>
             {
                 return await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, token);
             });
-        if (user is not null) dbContext.Attach(user);
-        return user;
     }
 
     public async Task AddUserAsync(User user)

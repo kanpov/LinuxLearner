@@ -49,3 +49,18 @@ Content-Type: application/json
 // Delete invite for course
 DELETE {{teacher-api}}/courses/da38204c-4b6d-416a-aa73-64431b9470f7/invites/e181a31d-7bbe-48a8-8b02-6eeced9dcabf
 Authorization: Bearer {{teacher-token}}
+###
+
+// Join course without invite
+POST {{student-api}}/courses/da38204c-4b6d-416a-aa73-64431b9470f7/join/without-invite
+Authorization: Bearer {{student-token}}
+###
+
+// Get invites for course
+GET {{teacher-api}}/courses/da38204c-4b6d-416a-aa73-64431b9470f7/invites
+Authorization: Bearer {{teacher-token}}
+###
+
+// Leave course
+POST {{student-api}}/courses/da38204c-4b6d-416a-aa73-64431b9470f7/leave
+Authorization: Bearer {{student-token}}

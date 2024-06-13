@@ -1,13 +1,15 @@
 using LinuxLearner.Domain;
 using LinuxLearner.Features.CourseParticipations;
 using LinuxLearner.Features.Courses;
+using LinuxLearner.Features.Users;
 
 namespace LinuxLearner.Features.CourseInvites;
 
 public class CourseInviteService(
     CourseInviteRepository inviteRepository,
     CourseService courseService,
-    CourseParticipationService courseParticipationService)
+    CourseParticipationService courseParticipationService,
+    UserService userService)
 {
     public async Task<CourseInviteDto?> CreateInviteAsync(HttpContext httpContext, Guid courseId,
         CourseInviteCreateDto inviteCreateDto)
@@ -15,7 +17,7 @@ public class CourseInviteService(
         var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (participation is null) return null;
         
-        var course = await courseService.GetCourseAsync(courseId);
+        var course = await courseService.GetCourseEntityAsync(courseId);
         if (course is null) return null;
         
         var invite = MapCreateDtoToInvite(courseId, inviteCreateDto);
@@ -52,6 +54,48 @@ public class CourseInviteService(
         if (invite is null) return false;
         
         await inviteRepository.DeleteInviteAsync(invite);
+        return true;
+    }
+
+    public async Task<IEnumerable<CourseInviteDto>?> GetInvitesForCourseAsync(HttpContext httpContext, Guid courseId)
+    {
+        var participation =
+            await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        if (participation is null) return null;
+
+        var inviteDtos = await inviteRepository.GetInvitesForCourseAsync(courseId);
+        return inviteDtos.Select(MapInviteToDto);
+    }
+
+    public async Task<bool> JoinCourseWithoutInviteAsync(HttpContext httpContext, Guid courseId)
+    {
+        var existingParticipation =
+            await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        if (existingParticipation is not null) return false;
+        
+        var course = await courseService.GetCourseEntityAsync(courseId);
+        if (course is not { AcceptanceMode: AcceptanceMode.NoInviteRequired }) return false;
+        
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
+        await courseParticipationService.CreateParticipationAsync(new CourseParticipation
+        {
+            Course = course,
+            CourseId = courseId,
+            User = user,
+            UserId = user.Id,
+            IsCourseAdministrator = false,
+            JoinTime = DateTimeOffset.UtcNow
+        });
+        return true;
+    }
+
+    public async Task<bool> LeaveCourseAsync(HttpContext httpContext, Guid courseId)
+    {
+        var participation =
+            await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        if (participation is null) return false;
+
+        await courseParticipationService.ForceDeleteParticipationAsync(courseId, participation.UserId);
         return true;
     }
 

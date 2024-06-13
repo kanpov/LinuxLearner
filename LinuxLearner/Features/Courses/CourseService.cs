@@ -28,9 +28,11 @@ public class CourseService(
 
     public async Task<CourseDto?> GetCourseAsync(Guid courseId)
     {
-        var course = await courseRepository.GetCourseAsync(courseId);
+        var course = await GetCourseEntityAsync(courseId);
         return course is null ? null : MapToCourseDto(course);
     }
+
+    internal async Task<Course?> GetCourseEntityAsync(Guid courseId) => await courseRepository.GetCourseAsync(courseId);
 
     public async Task<bool> PatchCourseAsync(HttpContext httpContext, Guid courseId, CoursePatchDto coursePatchDto)
     {

@@ -47,6 +47,7 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
     {
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/course-invite/{invite.Id}", invite);
+        await fusionCache.RemoveAsync($"/course-invite/course/{invite.CourseId}");
     }
 
     public async Task DeleteInviteAsync(CourseInvite invite)
@@ -55,5 +56,6 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
             .Where(i => i.Id == invite.Id)
             .ExecuteDeleteAsync();
         await fusionCache.RemoveAsync($"/course-invite/{invite.Id}");
+        await fusionCache.RemoveAsync($"/course-invite/course/{invite.CourseId}");
     }
 }
