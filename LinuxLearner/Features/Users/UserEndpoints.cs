@@ -10,8 +10,8 @@ public static class UserEndpoints
         studentApi.MapDelete("/user/self", DeleteSelfUser);
         studentApi.MapGet("/users/{userId:guid}", GetUser);
         
-        teacherApi.MapPut("/users/{userId:guid}/promote", PromoteUser);
-        teacherApi.MapPut("/users/{userId:guid}/demote", DemoteUser);
+        teacherApi.MapPost("/users/{userId:guid}/promote", PromoteUser);
+        teacherApi.MapPost("/users/{userId:guid}/demote", DemoteUser);
         
         adminApi.MapDelete("/users/{userId:guid}", DeleteUser);
     }
