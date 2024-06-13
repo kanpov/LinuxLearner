@@ -75,9 +75,8 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
         var userId = courseParticipation.UserId;
         var courseId = courseParticipation.CourseId;
         
-        await dbContext.CourseParticipations
-            .Where(p => p.UserId == userId && p.CourseId == courseId)
-            .ExecuteDeleteAsync();
+        dbContext.Remove(courseParticipation);
+        await dbContext.SaveChangesAsync();
         await fusionCache.RemoveAsync($"/course-participation/course{courseId}/user/{userId}");
         await fusionCache.RemoveAsync($"/course-participation/course/{courseId}");
         await fusionCache.RemoveAsync($"/course-participation/user/{userId}");

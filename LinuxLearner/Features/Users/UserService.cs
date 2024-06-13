@@ -33,7 +33,7 @@ public class UserService(
         var user = await userRepository.GetUserAsync(userId);
         if (user is null) return false;
 
-        await userRepository.DeleteUserAsync(userId);
+        await userRepository.DeleteUserAsync(user);
         await keycloakUserClient.DeleteUserAsync("master", userId.ToString());
 
         return true;

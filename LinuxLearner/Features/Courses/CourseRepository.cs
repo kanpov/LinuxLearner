@@ -31,11 +31,10 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         await fusionCache.SetAsync($"/course/{course.Id}", course);
     }
 
-    public async Task DeleteCourseAsync(Guid courseId)
+    public async Task DeleteCourseAsync(Course course)
     {
-        await dbContext.Courses
-            .Where(c => c.Id == courseId)
-            .ExecuteDeleteAsync();
-        await fusionCache.RemoveAsync($"/course/{courseId}");
+        dbContext.Remove(course);
+        await dbContext.SaveChangesAsync();
+        await fusionCache.RemoveAsync($"/course/{course.Id}");
     }
 }

@@ -29,12 +29,10 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
         await fusionCache.SetAsync($"/user/{user.Id}", user);
     }
 
-    public async Task DeleteUserAsync(Guid userId)
+    public async Task DeleteUserAsync(User user)
     {
-        await dbContext.Users
-            .Where(u => u.Id == userId)
-            .ExecuteDeleteAsync();
-
-        await fusionCache.RemoveAsync($"/user/{userId}");
+        dbContext.Remove(user);
+        await dbContext.SaveChangesAsync();
+        await fusionCache.RemoveAsync($"/user/{user.Id}");
     }
 }

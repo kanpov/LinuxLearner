@@ -50,10 +50,10 @@ public class CourseService(
 
     public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
     {
-        var courseUser = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
-        if (courseUser is null) return false;
+        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
+        if (participation is null) return false;
 
-        await courseRepository.DeleteCourseAsync(courseId);
+        await courseRepository.DeleteCourseAsync(participation.Course);
         return true;
     }
 
@@ -62,7 +62,7 @@ public class CourseService(
         var course = await courseRepository.GetCourseAsync(courseId);
         if (course is null) return false;
 
-        await courseRepository.DeleteCourseAsync(courseId);
+        await courseRepository.DeleteCourseAsync(course);
         return true;
     }
     
