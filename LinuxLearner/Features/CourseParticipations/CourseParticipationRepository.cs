@@ -9,7 +9,7 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
 {
     public async Task<CourseParticipation?> GetParticipationAsync(Guid courseId, Guid userId)
     {
-        return await fusionCache.GetOrSetAsync<CourseParticipation?>(
+        var participation = await fusionCache.GetOrSetAsync<CourseParticipation?>(
             $"/course-participation/course/{courseId}/user/{userId}",
             async token =>
             {
@@ -19,11 +19,13 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
                     .Include(p => p.User)
                     .FirstOrDefaultAsync(token);
             });
+        if (participation is not null) dbContext.Attach(participation);
+        return participation;
     }
 
     public async Task<IEnumerable<CourseParticipation>> GetParticipationsForCourseAsync(Guid courseId)
     {
-        return await fusionCache.GetOrSetAsync<IEnumerable<CourseParticipation>>(
+        var participations = await fusionCache.GetOrSetAsync<List<CourseParticipation>>(
             $"/course-participation/course/{courseId}",
             async token =>
             {
@@ -33,11 +35,13 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
                     .Include(p => p.User)
                     .ToListAsync(token);
             });
+        dbContext.AttachRange(participations);
+        return participations;
     }
 
     public async Task<IEnumerable<CourseParticipation>> GetParticipationsForUserAsync(Guid userId)
     {
-        return await fusionCache.GetOrSetAsync<IEnumerable<CourseParticipation>>(
+        var participations = await fusionCache.GetOrSetAsync<List<CourseParticipation>>(
             $"/course-participation/user/{userId}",
             async token =>
             {
@@ -47,6 +51,8 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
                     .Include(p => p.User)
                     .ToListAsync(token);
             });
+        dbContext.AttachRange(participations);
+        return participations;
     }
 
     public async Task AddParticipationAsync(CourseParticipation courseParticipation)

@@ -9,12 +9,14 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
     public async Task<User?> GetUserAsync(Guid userId)
     {
-        return await fusionCache.GetOrSetAsync<User?>(
+        var user = await fusionCache.GetOrSetAsync<User?>(
             $"/user/{userId}",
             async token =>
             {
                 return await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, token);
             });
+        if (user is not null) dbContext.Attach(user);
+        return user;
     }
 
     public async Task AddUserAsync(User user)
@@ -25,7 +27,6 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
 
     public async Task UpdateUserAsync(User user)
     {
-        dbContext.Entry(user).State = EntityState.Modified;
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/user/{user.Id}", user);
     }

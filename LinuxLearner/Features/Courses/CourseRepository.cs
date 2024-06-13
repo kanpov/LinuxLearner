@@ -9,12 +9,14 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
     public async Task<Course?> GetCourseAsync(Guid courseId)
     {
-        return await fusionCache.GetOrSetAsync<Course?>(
+        var course = await fusionCache.GetOrSetAsync<Course?>(
             $"/course/{courseId}",
             async token =>
             {
                 return await dbContext.Courses.FirstOrDefaultAsync(c => c.Id == courseId, token);
             });
+        if (course is not null) dbContext.Attach(course);
+        return course;
     }
 
     public async Task AddCourseAsync(Course course)
@@ -25,7 +27,6 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
 
     public async Task UpdateCourseAsync(Course course)
     {
-        dbContext.Entry(course).State = EntityState.Modified;
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/course/{course.Id}", course);
     }

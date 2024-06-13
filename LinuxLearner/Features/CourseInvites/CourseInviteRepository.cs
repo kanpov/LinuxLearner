@@ -9,7 +9,7 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
 {
     public async Task<CourseInvite?> GetInviteAsync(Guid inviteId, Guid courseId)
     {
-        return await fusionCache.GetOrSetAsync<CourseInvite?>(
+        var invite = await fusionCache.GetOrSetAsync<CourseInvite?>(
             $"/course-invite/{inviteId}/course/{inviteId}",
             async token =>
             {
@@ -18,6 +18,8 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
                     .Include(i => i.Course)
                     .FirstOrDefaultAsync(token);
             });
+        if (invite is not null) dbContext.Attach(invite);
+        return invite;
     }
     
     public async Task AddInviteAsync(CourseInvite invite)
@@ -28,7 +30,6 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
 
     public async Task UpdateInviteAsync(CourseInvite invite)
     {
-        dbContext.Entry(invite).State = EntityState.Modified;
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/course-invite/{invite.Id}/course/{invite.CourseId}", invite);
     }

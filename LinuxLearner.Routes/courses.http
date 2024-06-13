@@ -42,5 +42,5 @@ Authorization: Bearer {{teacher-token}}
 Content-Type: application/json
 
 {
-  "usageLimit": 50
+  "usageLimit": 42
 }
