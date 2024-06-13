@@ -44,6 +44,18 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         userDto.Should().BeNull();
     }
 
+    [Theory, CustomAutoData]
+    public async Task GetUserAsync_ShouldAddMissingUser_WhenItExistsInKeycloak(User baseUser)
+    {
+        var userId = await CreateKeycloakUserAsync(baseUser);
+        var userDto = await UserService.GetUserAsync(userId);
+
+        userDto.Should().NotBeNull();
+        var queriedUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        queriedUser.Should().NotBeNull();
+        Match(queriedUser!, userDto!);
+    }
+
     [Fact]
     public async Task DeleteAuthorizedUserAsync_ShouldSucceed()
     {

@@ -1,3 +1,4 @@
+using Keycloak.AuthServices.Sdk;
 using Keycloak.AuthServices.Sdk.Admin;
 using Keycloak.AuthServices.Sdk.Admin.Requests.Groups;
 using LinuxLearner.Domain;
@@ -41,7 +42,30 @@ public class UserService(
     public async Task<UserDto?> GetUserAsync(Guid userId)
     {
         var user = await userRepository.GetUserAsync(userId);
-        return user is null ? null : await FetchUserDtoAsync(user);
+        if (user is not null) return await FetchUserDtoAsync(user);
+
+        try
+        {
+            var groups = await keycloakUserClient.GetUserGroupsAsync(_realm, userId.ToString());
+            groups = groups.ToList();
+
+            var userType = UserType.Student;
+            if (groups.Any(g => g.Name == _metadataOptions["TeacherGroup"]!)) userType = UserType.Teacher;
+            if (groups.Any(g => g.Name == _metadataOptions["AdminGroup"]!)) userType = UserType.Admin;
+
+            var newUser = new User
+            {
+                Id = userId,
+                UserType = userType
+            };
+            await userRepository.AddUserAsync(newUser);
+
+            return await FetchUserDtoAsync(newUser);
+        }
+        catch (KeycloakHttpClientException) // no such user found
+        {
+            return null;
+        }
     }
 
     public async Task<bool> ChangeUserRoleAsync(HttpContext httpContext, Guid userId, bool demote)
