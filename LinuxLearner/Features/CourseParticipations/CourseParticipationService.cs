@@ -12,9 +12,7 @@ public class CourseParticipationService(
     {
         await courseParticipationRepository.AddParticipationAsync(new CourseParticipation
         {
-            Course = course,
             CourseId = course.Id,
-            User = user,
             UserId = user.Id,
             IsCourseAdministrator = isAdministrator,
             JoinTime = DateTimeOffset.UtcNow
