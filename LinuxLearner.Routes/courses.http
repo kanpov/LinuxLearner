@@ -62,5 +62,10 @@ Authorization: Bearer {{teacher-token}}
 ###
 
 // Leave course
-POST {{student-api}}/courses/da38204c-4b6d-416a-aa73-64431b9470f7/leave
+POST {{student-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4/leave
+Authorization: Bearer {{student-token}}
+###
+
+// Join course with invite
+POST {{student-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4/join/with-invite/b193f21e-65e4-424d-ab3f-64707623ceef
 Authorization: Bearer {{student-token}}

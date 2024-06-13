@@ -50,6 +50,18 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
         await fusionCache.RemoveAsync($"/course-invite/course/{invite.CourseId}");
     }
 
+    public async Task IncrementInviteUsageAmountAsync(CourseInvite invite)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+        await dbContext.CourseInvites
+            .Where(i => i.Id == invite.Id)
+            .ExecuteUpdateAsync(s =>
+                s.SetProperty(i => i.UsageAmount, i => i.UsageAmount + 1));
+
+        await transaction.CommitAsync();
+    }
+
     public async Task DeleteInviteAsync(CourseInvite invite)
     {
         await dbContext.CourseInvites

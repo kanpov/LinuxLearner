@@ -15,13 +15,7 @@ public class CourseService(
         var course = MapToCourse(courseCreateDto);
         await courseRepository.AddCourseAsync(course);
 
-        await courseParticipationService.CreateParticipationAsync(new CourseParticipation
-        {
-            CourseId = course.Id,
-            UserId = user.Id,
-            IsCourseAdministrator = true,
-            JoinTime = DateTimeOffset.UtcNow
-        });
+        await courseParticipationService.CreateParticipationAsync(course, user, isAdministrator: true);
         
         return MapToCourseDto(course);
     }

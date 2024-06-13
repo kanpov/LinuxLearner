@@ -8,9 +8,17 @@ public class CourseParticipationService(
     CourseParticipationRepository courseParticipationRepository,
     UserService userService)
 {
-    public async Task CreateParticipationAsync(CourseParticipation courseParticipation)
+    public async Task CreateParticipationAsync(Course course, User user, bool isAdministrator)
     {
-        await courseParticipationRepository.AddParticipationAsync(courseParticipation);
+        await courseParticipationRepository.AddParticipationAsync(new CourseParticipation
+        {
+            Course = course,
+            CourseId = course.Id,
+            User = user,
+            UserId = user.Id,
+            IsCourseAdministrator = isAdministrator,
+            JoinTime = DateTimeOffset.UtcNow
+        });
     }
     
     public async Task<bool> ChangeAdministrationOnCourseAsync(

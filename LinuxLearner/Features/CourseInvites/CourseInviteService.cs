@@ -77,15 +77,27 @@ public class CourseInviteService(
         if (course is not { AcceptanceMode: AcceptanceMode.NoInviteRequired }) return false;
         
         var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
-        await courseParticipationService.CreateParticipationAsync(new CourseParticipation
-        {
-            Course = course,
-            CourseId = courseId,
-            User = user,
-            UserId = user.Id,
-            IsCourseAdministrator = false,
-            JoinTime = DateTimeOffset.UtcNow
-        });
+        await courseParticipationService.CreateParticipationAsync(course, user, isAdministrator: false);
+        return true;
+    }
+
+    public async Task<bool> JoinCourseWithInviteAsync(HttpContext httpContext, Guid courseId, Guid inviteId)
+    {
+        var existingParticipation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        if (existingParticipation is not null) return false;
+
+        var course = await courseService.GetCourseEntityAsync(courseId);
+        if (course is null || course.AcceptanceMode == AcceptanceMode.Closed) return false;
+
+        var invite = await inviteRepository.GetInviteAsync(inviteId);
+        if (invite is null
+            || (invite.ExpirationTime is not null && invite.ExpirationTime < DateTimeOffset.UtcNow)
+            || invite.UsageAmount >= invite.UsageLimit) return false;
+
+        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
+        await courseParticipationService.CreateParticipationAsync(course, user, isAdministrator: false);
+        await inviteRepository.IncrementInviteUsageAmountAsync(invite);
+
         return true;
     }
 

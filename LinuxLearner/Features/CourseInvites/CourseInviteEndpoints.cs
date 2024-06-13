@@ -11,6 +11,7 @@ public static class CourseInviteEndpoints
         studentApi.MapGet("/courses/{courseId:guid}/invites/{inviteId:guid}", GetInvite)
             .WithName(nameof(GetInvite));
         studentApi.MapPost("/courses/{courseId:guid}/join/without-invite", JoinCourseWithoutInvite);
+        studentApi.MapPost("/courses/{courseId:guid}/join/with-invite/{inviteId:guid}", JoinCourseWithInvite);
         studentApi.MapPost("/courses/{courseId:guid}/leave", LeaveCourse);
         
         teacherApi.MapPost("/courses/{courseId:guid}/invites", CreateInvite);
@@ -68,6 +69,13 @@ public static class CourseInviteEndpoints
         CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId)
     {
         var success = await courseInviteService.JoinCourseWithoutInviteAsync(httpContext, courseId);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<NotFound, NoContent>> JoinCourseWithInvite(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId, Guid inviteId)
+    {
+        var success = await courseInviteService.JoinCourseWithInviteAsync(httpContext, courseId, inviteId);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
