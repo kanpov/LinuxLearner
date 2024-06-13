@@ -77,7 +77,7 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
         
         dbContext.Remove(courseParticipation);
         await dbContext.SaveChangesAsync();
-        await fusionCache.RemoveAsync($"/course-participation/course{courseId}/user/{userId}");
+        await fusionCache.RemoveAsync($"/course-participation/course/{courseId}/user/{userId}");
         await fusionCache.RemoveAsync($"/course-participation/course/{courseId}");
         await fusionCache.RemoveAsync($"/course-participation/user/{userId}");
     }
