@@ -7,19 +7,34 @@ namespace LinuxLearner.Features.CourseInvites;
 
 public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
-    public async Task<CourseInvite?> GetInviteAsync(Guid inviteId, Guid courseId)
+    public async Task<CourseInvite?> GetInviteAsync(Guid inviteId)
     {
         var invite = await fusionCache.GetOrSetAsync<CourseInvite?>(
-            $"/course-invite/{inviteId}/course/{inviteId}",
+            $"/course-invite/{inviteId}",
             async token =>
             {
                 return await dbContext.CourseInvites
-                    .Where(i => i.Id == inviteId && i.CourseId == courseId)
+                    .Where(i => i.Id == inviteId)
                     .Include(i => i.Course)
                     .FirstOrDefaultAsync(token);
             });
         if (invite is not null) dbContext.Attach(invite);
         return invite;
+    }
+
+    public async Task<IEnumerable<CourseInvite>> GetInvitesForCourseAsync(Guid courseId)
+    {
+        var invites = await fusionCache.GetOrSetAsync<List<CourseInvite>>(
+            $"/course-invite/course/{courseId}",
+            async token =>
+            {
+                return await dbContext.CourseInvites
+                    .Where(i => i.CourseId == courseId)
+                    .Include(i => i.Course)
+                    .ToListAsync(token);
+            });
+        dbContext.AttachRange(invites);
+        return invites;
     }
     
     public async Task AddInviteAsync(CourseInvite invite)
@@ -31,6 +46,14 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
     public async Task UpdateInviteAsync(CourseInvite invite)
     {
         await dbContext.SaveChangesAsync();
-        await fusionCache.SetAsync($"/course-invite/{invite.Id}/course/{invite.CourseId}", invite);
+        await fusionCache.SetAsync($"/course-invite/{invite.Id}", invite);
+    }
+
+    public async Task DeleteInviteAsync(CourseInvite invite)
+    {
+        await dbContext.CourseInvites
+            .Where(i => i.Id == invite.Id)
+            .ExecuteDeleteAsync();
+        await fusionCache.RemoveAsync($"/course-invite/{invite.Id}");
     }
 }

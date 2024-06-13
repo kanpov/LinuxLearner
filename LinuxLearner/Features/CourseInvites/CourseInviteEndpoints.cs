@@ -13,6 +13,7 @@ public static class CourseInviteEndpoints
         
         teacherApi.MapPost("/courses/{courseId:guid}/invites", CreateInvite);
         teacherApi.MapPatch("/courses/{courseId:guid}/invites/{inviteId:guid}", PatchInvite);
+        teacherApi.MapDelete("/courses/{courseId:guid}/invites/{inviteId:guid}", DeleteInvite);
     }
 
     private static async Task<Results<ValidationProblem, NotFound, CreatedAtRoute<CourseInviteDto>>> CreateInvite(
@@ -31,7 +32,7 @@ public static class CourseInviteEndpoints
     private static async Task<Results<NotFound, Ok<CourseInviteDto>>> GetInvite(
         CourseInviteService inviteService, Guid courseId, Guid inviteId)
     {
-        var inviteDto = await inviteService.GetInviteAsync(courseId, inviteId);
+        var inviteDto = await inviteService.GetInviteAsync(inviteId);
         return inviteDto is null ? TypedResults.NotFound() : TypedResults.Ok(inviteDto);
     }
 
@@ -43,6 +44,13 @@ public static class CourseInviteEndpoints
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
 
         var success = await courseInviteService.PatchInviteAsync(httpContext, courseId, inviteId, invitePatchDto);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<NotFound, NoContent>> DeleteInvite(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId, Guid inviteId)
+    {
+        var success = await courseInviteService.DeleteInviteAsync(httpContext, courseId, inviteId);
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

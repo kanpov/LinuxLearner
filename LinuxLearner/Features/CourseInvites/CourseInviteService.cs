@@ -20,12 +20,12 @@ public class CourseInviteService(
         
         var invite = MapCreateDtoToInvite(courseId, inviteCreateDto);
         await inviteRepository.AddInviteAsync(invite);
-        return await GetInviteAsync(courseId, invite.Id);
+        return await GetInviteAsync(invite.Id);
     }
 
-    public async Task<CourseInviteDto?> GetInviteAsync(Guid courseId, Guid inviteId)
+    public async Task<CourseInviteDto?> GetInviteAsync(Guid inviteId)
     {
-        var invite = await inviteRepository.GetInviteAsync(inviteId, courseId);
+        var invite = await inviteRepository.GetInviteAsync(inviteId);
         return invite is null ? null : MapInviteToDto(invite);
     }
 
@@ -35,11 +35,23 @@ public class CourseInviteService(
         var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (participation is null) return false;
         
-        var invite = await inviteRepository.GetInviteAsync(inviteId, courseId);
+        var invite = await inviteRepository.GetInviteAsync(inviteId);
         if (invite is null) return false;
         
         ProjectPatchDtoToInvite(invite, invitePatchDto);
         await inviteRepository.UpdateInviteAsync(invite);
+        return true;
+    }
+
+    public async Task<bool> DeleteInviteAsync(HttpContext httpContext, Guid courseId, Guid inviteId)
+    {
+        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
+        if (participation is null) return false;
+        
+        var invite = await inviteRepository.GetInviteAsync(inviteId);
+        if (invite is null) return false;
+        
+        await inviteRepository.DeleteInviteAsync(invite);
         return true;
     }
 
