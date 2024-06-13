@@ -34,7 +34,7 @@ public class CourseService(
 
     public async Task<bool> PatchCourseAsync(HttpContext httpContext, Guid courseId, CoursePatchDto coursePatchDto)
     {
-        var courseUser = await courseParticipationService.GetAdministrativeParticipationAsync(httpContext, courseId);
+        var courseUser = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (courseUser is null) return false;
         
         ProjectCoursePatchDto(courseUser.Course, coursePatchDto);
@@ -54,7 +54,7 @@ public class CourseService(
 
     public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
     {
-        var courseUser = await courseParticipationService.GetAdministrativeParticipationAsync(httpContext, courseId);
+        var courseUser = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (courseUser is null) return false;
 
         await courseRepository.DeleteCourseAsync(courseId);

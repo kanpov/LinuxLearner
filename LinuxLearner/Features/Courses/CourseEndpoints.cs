@@ -27,7 +27,7 @@ public static class CourseEndpoints
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
 
         var courseDto = await courseService.CreateCourseAsync(httpContext, courseCreateDto);
-        return TypedResults.CreatedAtRoute(courseDto, nameof(GetCourse), new { id = courseDto.Id });
+        return TypedResults.CreatedAtRoute(courseDto, nameof(GetCourse), new { courseId = courseDto.Id });
     }
 
     private static async Task<Results<ValidationProblem, NotFound, NoContent>> PatchCourse(

@@ -21,7 +21,7 @@ public static class CourseInviteEndpoints
         var validationResult = await validator.ValidateAsync(inviteCreateDto);
         if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
 
-        var inviteDto = await inviteService.CreateInviteAsync(courseId, inviteCreateDto);
+        var inviteDto = await inviteService.CreateInviteAsync(httpContext, courseId, inviteCreateDto);
         if (inviteDto is null) return TypedResults.NotFound();
         return TypedResults.CreatedAtRoute(inviteDto, nameof(GetInvite),
             new { inviteId = inviteDto.Id, courseId = inviteDto.Course.Id });

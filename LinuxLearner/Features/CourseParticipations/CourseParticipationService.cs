@@ -16,7 +16,7 @@ public class CourseParticipationService(
     public async Task<bool> ChangeAdministrationOnCourseAsync(
         HttpContext httpContext, Guid courseId, Guid userId, bool isCourseAdministrator)
     {
-        var grantor = await GetAdministrativeParticipationAsync(httpContext, courseId);
+        var grantor = await GetAuthorizedParticipationAsync(httpContext, courseId);
         if (grantor is null) return false;
 
         var grantee = await courseParticipationRepository.GetParticipationAsync(courseId, userId);
@@ -52,12 +52,14 @@ public class CourseParticipationService(
         return await FetchParticipationDtosAsync(participations);
     }
 
-    public async Task<CourseParticipation?> GetAdministrativeParticipationAsync(HttpContext httpContext, Guid courseId)
+    internal async Task<CourseParticipation?> GetAuthorizedParticipationAsync(HttpContext httpContext, Guid courseId, bool adminOnly = true)
     {
         var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
         var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
+        if (participation is null) return null;
 
-        return participation is { IsCourseAdministrator: true } ? participation : null;
+        if (adminOnly) return participation is { IsCourseAdministrator: true } ? participation : null;
+        return participation;
     }
 
     public async Task<bool> DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
@@ -72,7 +74,7 @@ public class CourseParticipationService(
 
     public async Task<bool> DeleteParticipationAsync(HttpContext httpContext, Guid courseId, Guid userId)
     {
-        var administrativeParticipation = await GetAdministrativeParticipationAsync(httpContext, courseId);
+        var administrativeParticipation = await GetAuthorizedParticipationAsync(httpContext, courseId);
         if (administrativeParticipation is null) return false;
 
         return await ForceDeleteParticipationAsync(courseId, userId);
