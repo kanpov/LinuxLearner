@@ -25,6 +25,7 @@ public class UserRepository(AppDbContext dbContext, IFusionCache fusionCache)
 
     public async Task UpdateUserAsync(User user)
     {
+        dbContext.Entry(user).State = EntityState.Modified;
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/user/{user.Id}", user);
     }

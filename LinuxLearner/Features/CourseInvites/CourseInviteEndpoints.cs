@@ -12,6 +12,7 @@ public static class CourseInviteEndpoints
             .WithName(nameof(GetInvite));
         
         teacherApi.MapPost("/courses/{courseId:guid}/invites", CreateInvite);
+        teacherApi.MapPatch("/courses/{courseId:guid}/invites/{inviteId:guid}", PatchInvite);
     }
 
     private static async Task<Results<ValidationProblem, NotFound, CreatedAtRoute<CourseInviteDto>>> CreateInvite(
@@ -32,5 +33,16 @@ public static class CourseInviteEndpoints
     {
         var inviteDto = await inviteService.GetInviteAsync(courseId, inviteId);
         return inviteDto is null ? TypedResults.NotFound() : TypedResults.Ok(inviteDto);
+    }
+
+    private static async Task<Results<ValidationProblem, NotFound, NoContent>> PatchInvite(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId, Guid inviteId,
+        IValidator<CourseInvitePatchDto> validator, CourseInvitePatchDto invitePatchDto)
+    {
+        var validationResult = await validator.ValidateAsync(invitePatchDto);
+        if (!validationResult.IsValid) return validationResult.ToProblem(httpContext);
+
+        var success = await courseInviteService.PatchInviteAsync(httpContext, courseId, inviteId, invitePatchDto);
+        return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

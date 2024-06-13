@@ -9,9 +9,10 @@ public class CourseInviteService(
     CourseService courseService,
     CourseParticipationService courseParticipationService)
 {
-    public async Task<CourseInviteDto?> CreateInviteAsync(HttpContext httpContext, Guid courseId, CourseInviteCreateDto inviteCreateDto)
+    public async Task<CourseInviteDto?> CreateInviteAsync(HttpContext httpContext, Guid courseId,
+        CourseInviteCreateDto inviteCreateDto)
     {
-        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (participation is null) return null;
         
         var course = await courseService.GetCourseAsync(courseId);
@@ -26,6 +27,20 @@ public class CourseInviteService(
     {
         var invite = await inviteRepository.GetInviteAsync(inviteId, courseId);
         return invite is null ? null : MapInviteToDto(invite);
+    }
+
+    public async Task<bool> PatchInviteAsync(HttpContext httpContext, Guid courseId, Guid inviteId,
+        CourseInvitePatchDto invitePatchDto)
+    {
+        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
+        if (participation is null) return false;
+        
+        var invite = await inviteRepository.GetInviteAsync(inviteId, courseId);
+        if (invite is null) return false;
+        
+        ProjectPatchDtoToInvite(invite, invitePatchDto);
+        await inviteRepository.UpdateInviteAsync(invite);
+        return true;
     }
 
     private static CourseInvite MapCreateDtoToInvite(Guid courseId, CourseInviteCreateDto inviteCreateDto)
@@ -50,4 +65,17 @@ public class CourseInviteService(
             invite.ExpirationTime,
             invite.UsageLimit,
             invite.UsageAmount);
+
+    private static void ProjectPatchDtoToInvite(CourseInvite invite, CourseInvitePatchDto invitePatchDto)
+    {
+        if (invitePatchDto.UsageLimit.HasValue)
+        {
+            invite.UsageLimit = invitePatchDto.UsageLimit.Value;
+        }
+        
+        if (invitePatchDto.LifespanFromNow.HasValue)
+        {
+            invite.ExpirationTime = DateTimeOffset.UtcNow + invitePatchDto.LifespanFromNow.Value;
+        }
+    }
 }

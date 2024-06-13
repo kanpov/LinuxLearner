@@ -32,5 +32,15 @@ Content-Type: application/json
 ###
 
 // Get invite for course
-GET {{admin-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4/invites/b193f21e-65e4-424d-ab3f-64707623ceef/force
-Authorization: Bearer {{admin-token}}
+GET {{teacher-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4/invites/b193f21e-65e4-424d-ab3f-64707623ceef
+Authorization: Bearer {{teacher-token}}
+###
+
+// Patch invite for course
+PATCH {{teacher-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4/invites/b193f21e-65e4-424d-ab3f-64707623ceef
+Authorization: Bearer {{teacher-token}}
+Content-Type: application/json
+
+{
+  "usageLimit": 50
+}

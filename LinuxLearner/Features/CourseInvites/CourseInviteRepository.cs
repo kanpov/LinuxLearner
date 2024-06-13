@@ -28,6 +28,7 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
 
     public async Task UpdateInviteAsync(CourseInvite invite)
     {
+        dbContext.Entry(invite).State = EntityState.Modified;
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/course-invite/{invite.Id}/course/{invite.CourseId}", invite);
     }

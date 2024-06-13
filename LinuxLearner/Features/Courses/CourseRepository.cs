@@ -25,6 +25,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
 
     public async Task UpdateCourseAsync(Course course)
     {
+        dbContext.Entry(course).State = EntityState.Modified;
         await dbContext.SaveChangesAsync();
         await fusionCache.SetAsync($"/course/{course.Id}", course);
     }

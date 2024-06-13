@@ -80,6 +80,7 @@ builder.Services.AddScoped<CourseInviteService>();
 builder.Services.AddScoped<IValidator<CourseCreateDto>, CourseCreateDtoValidator>();
 builder.Services.AddScoped<IValidator<CoursePatchDto>, CoursePatchDtoValidator>();
 builder.Services.AddScoped<IValidator<CourseInviteCreateDto>, CourseInviteCreateDtoValidator>();
+builder.Services.AddScoped<IValidator<CourseInvitePatchDto>, CourseInvitePatchDtoValidator>();
 // serialization
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
