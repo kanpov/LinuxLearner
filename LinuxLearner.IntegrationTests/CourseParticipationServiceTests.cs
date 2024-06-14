@@ -86,7 +86,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
             httpContext = MakeContext(ownerType);
         }
         
-        await UserService.GetAuthorizedUserEntityAsync(httpContext);
+        await UserService.GetAuthorizedUserAsync(httpContext);
         
         DbContext.Courses.Add(course);
         DbContext.Add(new CourseParticipation

@@ -10,21 +10,6 @@ namespace LinuxLearner.IntegrationTests;
 public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(factory)
 {
     private UserService UserService => Services.GetRequiredService<UserService>();
-    
-    [Theory]
-    [InlineData(UserType.Student), InlineData(UserType.Teacher)]
-    public async Task GetAuthorizedUserAsync_ShouldCreateUser(UserType userType)
-    {
-        var httpContext = await MakeContextAndUserAsync(userType);
-        var userDto = await UserService.GetAuthorizedUserAsync(httpContext);
-
-        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == userDto.Id);
-        user.Should().NotBeNull();
-        Match(user!, userDto);
-        
-        userDto.UserType.Should().Be(userType);
-        userDto.Id.Should().Be(GetUserIdFromContext(httpContext));
-    }
 
     [Theory, CustomAutoData]
     public async Task GetUserAsync_ShouldReturnUser_WhenItExists(User user)
@@ -60,11 +45,8 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     public async Task DeleteAuthorizedUserAsync_ShouldSucceed()
     {
         var httpContext = await MakeContextAndUserAsync(UserType.Student);
-        var userDto = await UserService.GetAuthorizedUserAsync(httpContext);
-
         await UserService.DeleteAuthorizedUserAsync(httpContext);
-
-        await AssertUserIsMissingAsync(userDto.Id);
+        await AssertUserIsMissingAsync(GetUserIdFromContext(httpContext));
     }
 
     [Theory, CustomAutoData]
@@ -85,9 +67,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     public async Task ChangeUserRoleAsync_ShouldRejectSamePerson()
     {
         var httpContext = await MakeContextAndUserAsync(UserType.Student);
-        var user = await UserService.GetAuthorizedUserAsync(httpContext);
-
-        var success = await UserService.ChangeUserRoleAsync(httpContext, user.Id, demote: false);
+        var success = await UserService.ChangeUserRoleAsync(httpContext, GetUserIdFromContext(httpContext), demote: false);
         success.Should().BeFalse();
     }
 
@@ -95,9 +75,10 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
     public async Task ChangeUserRoleAsync_ShouldRejectInsufficientPrivilege(User granteeUser)
     {
         var httpContext = await MakeContextAndUserAsync(UserType.Student);
-        await UserService.GetAuthorizedUserAsync(httpContext);
         granteeUser.UserType = UserType.Teacher;
-
+        DbContext.Add(granteeUser);
+        await DbContext.SaveChangesAsync();
+        
         var success = await UserService.ChangeUserRoleAsync(httpContext, granteeUser.Id, demote: false);
         success.Should().BeFalse();
     }
@@ -129,7 +110,6 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         UserType granteeNextType, bool demote, string groupName)
     {
         var httpContext = await MakeContextAndUserAsync(grantorType);
-        var grantorUser = await UserService.GetAuthorizedUserAsync(httpContext);
 
         granteeUser.Id = await CreateKeycloakUserAsync(granteeType);
         granteeUser.UserType = granteeType;
@@ -139,7 +119,9 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         var success = await UserService.ChangeUserRoleAsync(httpContext, granteeUser.Id, demote);
 
         success.Should().BeTrue();
-        grantorUser.UserType.Should().Be(grantorType);
+        var grantorUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == GetUserIdFromContext(httpContext));
+        grantorUser.Should().NotBeNull();
+        grantorUser!.UserType.Should().Be(grantorType);
         granteeUser.UserType.Should().Be(granteeNextType);
         var keycloakGroups = await KeycloakUserClient.GetUserGroupsAsync(
             "master", granteeUser.Id.ToString());
@@ -162,6 +144,4 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         user.Id.Should().Be(userDto.Id);
         user.UserType.Should().Be(userDto.UserType);
     }
-
-    // investigate the possibility of connecting to keycloak so that DELETE endpoints also become testable
 }

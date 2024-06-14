@@ -16,15 +16,9 @@ public class UserService(
     private readonly IConfigurationSection _metadataOptions = configuration.GetRequiredSection("KeycloakMetadata");
     private readonly string _realm = configuration.GetRequiredSection("KeycloakMetadata")["Realm"]!;
     
-    public async Task<UserDto> GetAuthorizedUserAsync(HttpContext httpContext)
-    {
-        var user = await GetAuthorizedUserEntityAsync(httpContext);
-        return await FetchUserDtoAsync(user);
-    }
-    
     public async Task DeleteAuthorizedUserAsync(HttpContext httpContext)
     {
-        var user = await GetAuthorizedUserEntityAsync(httpContext);
+        var user = await GetAuthorizedUserAsync(httpContext);
         await DeleteUserAsync(user.Id);
     }
     
@@ -70,7 +64,7 @@ public class UserService(
 
     public async Task<bool> ChangeUserRoleAsync(HttpContext httpContext, Guid userId, bool demote)
     {
-        var senderUser = await GetAuthorizedUserEntityAsync(httpContext);
+        var senderUser = await GetAuthorizedUserAsync(httpContext);
         var receiverUser = await userRepository.GetUserAsync(userId);
         
         if (receiverUser is null || senderUser.UserType <= receiverUser.UserType) return false;
@@ -136,7 +130,7 @@ public class UserService(
             new FusionCacheEntryOptions(TimeSpan.FromDays(7)));
     }
 
-    public async Task<User> GetAuthorizedUserEntityAsync(HttpContext httpContext)
+    public async Task<User> GetAuthorizedUserAsync(HttpContext httpContext)
     {
         var claimsPrincipal = httpContext.User;
 

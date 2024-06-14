@@ -129,7 +129,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     {
         var httpContext = MakeContext(UserType.Teacher);
         DbContext.Add(course);
-        await UserService.GetAuthorizedUserEntityAsync(httpContext);
+        await UserService.GetAuthorizedUserAsync(httpContext);
         DbContext.Add(new CourseParticipation
             { CourseId = course.Id, UserId = GetUserIdFromContext(httpContext), IsCourseAdministrator = isAdministrator });
         await DbContext.SaveChangesAsync();

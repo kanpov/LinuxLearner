@@ -78,7 +78,7 @@ public class CourseInviteService(
         var course = await courseService.GetCourseEntityAsync(courseId);
         if (course is not { AcceptanceMode: AcceptanceMode.NoInviteRequired }) return false;
         
-        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
         await courseParticipationService.CreateParticipationAsync(course, user, isAdministrator: false);
         return true;
     }
@@ -96,7 +96,7 @@ public class CourseInviteService(
             || (invite.ExpirationTime is not null && invite.ExpirationTime < DateTimeOffset.UtcNow)
             || invite.UsageAmount >= invite.UsageLimit) return false;
 
-        var user = await userService.GetAuthorizedUserEntityAsync(httpContext);
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
         await courseParticipationService.CreateParticipationAsync(course, user, isAdministrator: false);
         await inviteRepository.IncrementInviteUsageAmountAsync(invite);
 
