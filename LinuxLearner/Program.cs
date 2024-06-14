@@ -105,9 +105,19 @@ builder.Services
 builder.Services
     .AddKeycloakAdminHttpClient(builder.Configuration.GetRequiredSection("KeycloakAdmin"))
     .AddClientCredentialsTokenHandler("admin-api");
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin();
+    });
+});
 
 var app = builder.Build();
 
+// CORS
+app.UseCors();
 // swagger
 if (app.Environment.IsDevelopment())
 {
