@@ -25,7 +25,9 @@ public static class CourseEndpoints
         CourseService courseService, int page, int pageSize = 10, string? name = null, string? description = null,
         AcceptanceMode? acceptanceMode = null, CourseSortParameter sortParameter = CourseSortParameter.Name)
     {
-        return TypedResults.Ok(await courseService.GetCoursesAsync(page, pageSize, name, description, acceptanceMode, sortParameter));
+        var courseDtos =
+            await courseService.GetCoursesAsync(page, pageSize, name, description, acceptanceMode, sortParameter);
+        return TypedResults.Ok(courseDtos);
     }
 
     private static async Task<Results<ValidationProblem, CreatedAtRoute<CourseDto>>> CreateCourse(
