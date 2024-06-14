@@ -22,14 +22,16 @@ public class CourseService(
         return MapToCourseDto(course);
     }
 
-    public async Task<IEnumerable<CourseDto>> GetCoursesAsync(int page, int pageSize, string? name, string? description,
+    public async Task<(int, IEnumerable<CourseDto>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
         AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter)
     {
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
         
-        var courses = await courseRepository.GetCoursesAsync(page, pageSize, name, description,
+        var (totalAmount, courses) = await courseRepository.GetCoursesAsync(page, pageSize, name, description,
             acceptanceMode, sortParameter);
-        return courses.Select(MapToCourseDto);
+        var courseDtos = courses.Select(MapToCourseDto);
+        
+        return (totalAmount, courseDtos);
     }
 
     public async Task<CourseDto?> GetCourseAsync(Guid courseId)

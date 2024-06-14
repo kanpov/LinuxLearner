@@ -72,5 +72,5 @@ Authorization: Bearer {{student-token}}
 ###
 
 // Get courses
-GET {{student-api}}/courses?page=1&sortParameter=Name
+GET {{student-api}}/courses?page=2&pageSize=2&sortParameter=Name
 Authorization: Bearer {{student-token}}

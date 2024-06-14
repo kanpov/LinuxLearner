@@ -20,7 +20,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         return course;
     }
 
-    public async Task<IEnumerable<Course>> GetCoursesAsync(int page, int pageSize, string? name, string? description,
+    public async Task<(int, IEnumerable<Course>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
         AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter)
     {
         var results = dbContext.Courses.AsQueryable();
@@ -48,10 +48,13 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
             _ => throw new ArgumentOutOfRangeException(nameof(sortParameter), sortParameter, null)
         };
 
-        return await results
+        var totalAmount = await results.CountAsync();
+        var paginatedResults = await results
             .Skip(pageSize * (page - 1))
             .Take(pageSize)
             .ToListAsync();
+
+        return (totalAmount, paginatedResults);
     }
 
     public async Task AddCourseAsync(Course course)

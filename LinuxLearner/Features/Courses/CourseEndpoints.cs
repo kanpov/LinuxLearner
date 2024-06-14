@@ -22,11 +22,14 @@ public static class CourseEndpoints
     }
 
     private static async Task<Ok<IEnumerable<CourseDto>>> GetCourses(
-        CourseService courseService, int page, int pageSize = 10, string? name = null, string? description = null,
+        CourseService courseService, int page, HttpContext httpContext,
+        int pageSize = 10, string? name = null, string? description = null,
         AcceptanceMode? acceptanceMode = null, CourseSortParameter sortParameter = CourseSortParameter.Name)
     {
-        var courseDtos =
+        var (totalAmount, courseDtos) =
             await courseService.GetCoursesAsync(page, pageSize, name, description, acceptanceMode, sortParameter);
+        PaginationData.Add(httpContext, totalAmount, page, pageSize);
+        
         return TypedResults.Ok(courseDtos);
     }
 
