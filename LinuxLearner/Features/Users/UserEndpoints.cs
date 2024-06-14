@@ -6,7 +6,6 @@ public static class UserEndpoints
 {
     public static void Map(RouteGroupBuilder studentApi, RouteGroupBuilder teacherApi, RouteGroupBuilder adminApi)
     {
-        studentApi.MapGet("/user/self", GetSelfUser);
         studentApi.MapDelete("/user/self", DeleteSelfUser);
         studentApi.MapGet("/users/{userId:guid}", GetUser);
         
@@ -14,12 +13,6 @@ public static class UserEndpoints
         teacherApi.MapPost("/users/{userId:guid}/demote", DemoteUser);
         
         adminApi.MapDelete("/users/{userId:guid}", DeleteUser);
-    }
-
-    private static async Task<Ok<UserDto>> GetSelfUser(HttpContext httpContext, UserService userService)
-    {
-        var userDto = await userService.GetAuthorizedUserAsync(httpContext);
-        return TypedResults.Ok(userDto);
     }
 
     private static async Task<NoContent> DeleteSelfUser(UserService userService, HttpContext httpContext)

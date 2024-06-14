@@ -22,12 +22,15 @@ public class CourseInviteService(
         
         var invite = MapCreateDtoToInvite(courseId, inviteCreateDto);
         await inviteRepository.AddInviteAsync(invite);
-        return await GetInviteAsync(invite.Id);
+        return MapInviteToDto(invite);
     }
 
-    public async Task<CourseInviteDto?> GetInviteAsync(Guid inviteId)
+    public async Task<CourseInviteDto?> GetInviteAsync(HttpContext httpContext, Guid courseId, Guid inviteId)
     {
-        var invite = await inviteRepository.GetInviteAsync(inviteId);
+        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        if (participation is null) return null;
+        
+        var invite = await inviteRepository.GetInviteAsync(courseId, inviteId);
         return invite is null ? null : MapInviteToDto(invite);
     }
 
@@ -37,7 +40,7 @@ public class CourseInviteService(
         var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (participation is null) return false;
         
-        var invite = await inviteRepository.GetInviteAsync(inviteId);
+        var invite = await inviteRepository.GetInviteAsync(courseId, inviteId);
         if (invite is null) return false;
         
         ProjectPatchDtoToInvite(invite, invitePatchDto);
@@ -50,7 +53,7 @@ public class CourseInviteService(
         var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
         if (participation is null) return false;
         
-        var invite = await inviteRepository.GetInviteAsync(inviteId);
+        var invite = await inviteRepository.GetInviteAsync(courseId, inviteId);
         if (invite is null) return false;
         
         await inviteRepository.DeleteInviteAsync(invite);
@@ -59,8 +62,7 @@ public class CourseInviteService(
 
     public async Task<IEnumerable<CourseInviteDto>?> GetInvitesForCourseAsync(HttpContext httpContext, Guid courseId)
     {
-        var participation =
-            await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
         if (participation is null) return null;
 
         var inviteDtos = await inviteRepository.GetInvitesForCourseAsync(courseId);
@@ -89,7 +91,7 @@ public class CourseInviteService(
         var course = await courseService.GetCourseEntityAsync(courseId);
         if (course is null || course.AcceptanceMode == AcceptanceMode.Closed) return false;
 
-        var invite = await inviteRepository.GetInviteAsync(inviteId);
+        var invite = await inviteRepository.GetInviteAsync(courseId, inviteId);
         if (invite is null
             || (invite.ExpirationTime is not null && invite.ExpirationTime < DateTimeOffset.UtcNow)
             || invite.UsageAmount >= invite.UsageLimit) return false;

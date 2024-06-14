@@ -12,9 +12,9 @@ public static class CourseParticipationEndpoints
         studentApi.MapDelete("/participations/course/{courseId:guid}/user/self", DeleteOwnParticipation);
 
         teacherApi.MapDelete("/participations/course/{courseId:guid}/user/{userId:guid}", DeleteParticipation);
+        teacherApi.MapPost("/participations/course/{courseId:guid}/user/{userId:guid}/administration/grant", GrantCourseAdministration);
+        teacherApi.MapPost("/participations/course/{courseId:guid}/user/{userId:guid}/administration/revoke", RevokeCourseAdministration);
         
-        adminApi.MapPost("/participations/course/{courseId:guid}/user/{userId:guid}/administration/grant", GrantCourseAdministration);
-        adminApi.MapPost("/participations/course/{courseId:guid}/user/{userId:guid}/administration/revoke", RevokeCourseAdministration);
         adminApi.MapDelete("/participations/course/{courseId:guid}/user/{userId:guid}/force", ForceDeleteParticipation);
     }
     

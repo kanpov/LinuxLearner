@@ -7,14 +7,14 @@ namespace LinuxLearner.Features.CourseInvites;
 
 public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionCache)
 {
-    public async Task<CourseInvite?> GetInviteAsync(Guid inviteId)
+    public async Task<CourseInvite?> GetInviteAsync(Guid courseId, Guid inviteId)
     {
         var invite = await fusionCache.GetOrSetAsync<CourseInvite?>(
-            $"/course-invite/{inviteId}",
+            $"/course-invite/course/{courseId}/invite/{inviteId}",
             async token =>
             {
                 return await dbContext.CourseInvites
-                    .Where(i => i.Id == inviteId)
+                    .Where(i => i.Id == inviteId && i.CourseId == courseId)
                     .Include(i => i.Course)
                     .FirstOrDefaultAsync(token);
             });
@@ -46,7 +46,7 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
     public async Task UpdateInviteAsync(CourseInvite invite)
     {
         await dbContext.SaveChangesAsync();
-        await fusionCache.SetAsync($"/course-invite/{invite.Id}", invite);
+        await fusionCache.SetAsync($"/course-invite/course/{invite.CourseId}/invite/{invite.Id}", invite);
         await fusionCache.RemoveAsync($"/course-invite/course/{invite.CourseId}");
     }
 
@@ -66,7 +66,7 @@ public class CourseInviteRepository(AppDbContext dbContext, IFusionCache fusionC
     {
         dbContext.Remove(invite);
         await dbContext.SaveChangesAsync();
-        await fusionCache.RemoveAsync($"/course-invite/{invite.Id}");
+        await fusionCache.RemoveAsync($"/course-invite/course/{invite.CourseId}/invite/{invite.Id}");
         await fusionCache.RemoveAsync($"/course-invite/course/{invite.CourseId}");
     }
 }

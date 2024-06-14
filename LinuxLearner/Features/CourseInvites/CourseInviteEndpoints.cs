@@ -34,9 +34,9 @@ public static class CourseInviteEndpoints
     }
 
     private static async Task<Results<NotFound, Ok<CourseInviteDto>>> GetInvite(
-        CourseInviteService inviteService, Guid courseId, Guid inviteId)
+        CourseInviteService inviteService, HttpContext httpContext, Guid courseId, Guid inviteId)
     {
-        var inviteDto = await inviteService.GetInviteAsync(inviteId);
+        var inviteDto = await inviteService.GetInviteAsync(httpContext, courseId, inviteId);
         return inviteDto is null ? TypedResults.NotFound() : TypedResults.Ok(inviteDto);
     }
 
