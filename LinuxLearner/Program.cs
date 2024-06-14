@@ -108,16 +108,20 @@ builder.Services
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("cors-policy", policy =>
     {
-        policy.AllowAnyOrigin();
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowAnyOrigin();
     });
 });
 
 var app = builder.Build();
 
 // CORS
-app.UseCors();
+app.UseRouting();
+app.UseCors("cors-policy");
 // swagger
 if (app.Environment.IsDevelopment())
 {
