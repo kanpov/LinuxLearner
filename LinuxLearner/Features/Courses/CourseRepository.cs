@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using LinuxLearner.Database;
 using LinuxLearner.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,40 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
             });
         if (course is not null) dbContext.Attach(course);
         return course;
+    }
+
+    public async Task<IEnumerable<Course>> GetCoursesAsync(int page, int pageSize, string? name, string? description,
+        AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter)
+    {
+        var results = dbContext.Courses.AsQueryable();
+
+        if (name is not null)
+        {
+            results = results.Where(c => c.Name.Contains(name));
+        }
+
+        if (description is not null)
+        {
+            results = results.Where(c => c.Description != null && c.Description.Contains(description));
+        }
+
+        if (acceptanceMode is not null)
+        {
+            results = results.Where(c => c.AcceptanceMode == acceptanceMode);
+        }
+
+        results = sortParameter switch
+        {
+            CourseSortParameter.Id => results.OrderBy(i => i.Id),
+            CourseSortParameter.Name => results.OrderBy(i => i.Name),
+            CourseSortParameter.Description => results.OrderBy(i => i.Description),
+            _ => throw new ArgumentOutOfRangeException(nameof(sortParameter), sortParameter, null)
+        };
+
+        return await results
+            .Skip(pageSize * (page - 1))
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task AddCourseAsync(Course course)

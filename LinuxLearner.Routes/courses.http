@@ -69,3 +69,8 @@ Authorization: Bearer {{student-token}}
 // Join course with invite
 POST {{student-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4/join/with-invite/b193f21e-65e4-424d-ab3f-64707623ceef
 Authorization: Bearer {{student-token}}
+###
+
+// Get courses
+GET {{student-api}}/courses?page=1&sortParameter=Name
+Authorization: Bearer {{student-token}}
