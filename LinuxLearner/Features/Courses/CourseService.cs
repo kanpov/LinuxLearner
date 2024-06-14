@@ -9,7 +9,7 @@ public class CourseService(
     UserService userService,
     CourseParticipationService courseParticipationService)
 {
-    private const int MaxPageSize = 25;
+    public const int MaxPageSize = 25;
     
     public async Task<CourseDto> CreateCourseAsync(HttpContext httpContext, CourseCreateDto courseCreateDto)
     {
@@ -22,8 +22,8 @@ public class CourseService(
         return MapToCourseDto(course);
     }
 
-    public async Task<(int, IEnumerable<CourseDto>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
-        AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter)
+    public async Task<(int, IEnumerable<CourseDto>)> GetCoursesAsync(int page, int pageSize, string? name = null,
+        string? description = null, AcceptanceMode? acceptanceMode = null, CourseSortParameter sortParameter = CourseSortParameter.Name)
     {
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
         

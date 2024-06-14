@@ -1,6 +1,5 @@
 using FluentValidation;
 using LinuxLearner.Domain;
-using LinuxLearner.Features.CourseParticipations;
 using LinuxLearner.Utilities;
 using Microsoft.AspNetCore.Http.HttpResults;
 

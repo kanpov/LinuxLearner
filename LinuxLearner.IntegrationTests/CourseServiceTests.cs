@@ -1,3 +1,4 @@
+using AutoFixture;
 using FluentAssertions;
 using LinuxLearner.Domain;
 using LinuxLearner.Features.Courses;
@@ -29,6 +30,63 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     {
         var courseDto = await CourseService.GetCourseAsync(courseId);
         courseDto.Should().BeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task GetCoursesAsync_ShouldPerformPaging(Fixture fixture)
+    {
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 5, sortParameter: CourseSortParameter.Name),
+            courses => courses.OrderBy(c => c.Name).Take(5).ToList());
+        
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(2, 5, sortParameter: CourseSortParameter.Name),
+            courses => courses.OrderBy(c => c.Name).Skip(5).Take(5).ToList());
+        
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(3, 5, sortParameter: CourseSortParameter.Name),
+            courses => courses.OrderBy(c => c.Name).Skip(10).Take(5).ToList());
+    }
+
+    [Theory, CustomAutoData]
+    public async Task GetCoursesAsync_ShouldPerformFiltering(Fixture fixture)
+    {
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 15, name: "1", sortParameter: CourseSortParameter.Name),
+            courses => courses
+                .OrderBy(c => c.Name)
+                .Where(c => c.Name.Contains('1'))
+                .ToList());
+
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 15, description: "5", sortParameter: CourseSortParameter.Name),
+            courses => courses
+                .OrderBy(c => c.Name)
+                .Where(c => c.Description is not null && c.Description.Contains('5'))
+                .ToList());
+
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 15, acceptanceMode: AcceptanceMode.Closed),
+            courses => courses
+                .OrderBy(c => c.Name)
+                .Where(c => c.AcceptanceMode == AcceptanceMode.Closed)
+                .ToList());
+    }
+
+    [Theory, CustomAutoData]
+    public async Task GetCoursesAsync_ShouldPerformSorting(Fixture fixture)
+    {
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 15, sortParameter: CourseSortParameter.Name),
+            courses => courses.OrderBy(c => c.Name).ToList());
+        
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 15, sortParameter: CourseSortParameter.Id),
+            courses => courses.OrderBy(c => c.Id).ToList());
+        
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(1, 15, sortParameter: CourseSortParameter.Description),
+            courses => courses.OrderBy(c => c.Description).ToList());
     }
 
     [Theory, CustomAutoData]
@@ -135,6 +193,29 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         await DbContext.SaveChangesAsync();
 
         return httpContext;
+    }
+
+    private async Task AssertGetCoursesAsync(
+        Fixture fixture,
+        Func<Task<(int, IEnumerable<CourseDto>)>> actualCall,
+        Func<List<Course>, List<Course>> expectCall,
+        int count = 15)
+    {
+        var courses = fixture.CreateMany<Course>(count)!.ToList();
+        await DbContext.Courses.ExecuteDeleteAsync();
+        DbContext.AddRange(courses);
+        await DbContext.SaveChangesAsync();
+
+        var (_, returnedCourses) = await actualCall();
+        returnedCourses = returnedCourses.ToList();
+        var expectedCourses = expectCall(courses);
+        returnedCourses.Count().Should().Be(expectedCourses.Count);
+        foreach (var course in expectedCourses)
+        {
+            var courseDto = returnedCourses.FirstOrDefault(c => c.Id == course.Id);
+            courseDto.Should().NotBeNull();
+            Match(course, courseDto!);
+        }
     }
 
     private static void Match(Course course, CourseDto courseDto)
