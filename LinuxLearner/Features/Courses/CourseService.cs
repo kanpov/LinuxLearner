@@ -78,7 +78,10 @@ public class CourseService(
     private static void ProjectCoursePatchDto(Course course, CoursePatchDto coursePatchDto)
     {
         if (coursePatchDto.Name is not null) course.Name = coursePatchDto.Name;
-        course.Description = coursePatchDto.Description;
+        if (coursePatchDto.Description is not null)
+        {
+            course.Description = coursePatchDto.Description == "" ? null : coursePatchDto.Description;
+        }
         if (coursePatchDto.AcceptanceMode.HasValue) course.AcceptanceMode = coursePatchDto.AcceptanceMode.Value;
         if (coursePatchDto.Discoverable.HasValue) course.Discoverable = coursePatchDto.Discoverable.Value;
     }
