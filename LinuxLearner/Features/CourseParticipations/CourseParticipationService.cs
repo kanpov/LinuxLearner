@@ -42,20 +42,21 @@ public class CourseParticipationService(
         return participation is null ? null : await FetchParticipationDtoAsync(participation);
     }
 
-    public async Task<IEnumerable<CourseParticipationDto>?> GetParticipationsForCourseAsync(HttpContext httpContext, Guid courseId)
+    public async Task<IEnumerable<CourseParticipationWithoutCourseDto>?> GetParticipationsForCourseAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
         var participationOfSelf = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
         if (participationOfSelf is null) return null;
 
-        var participations = await courseParticipationRepository.GetParticipationsForCourseAsync(courseId);
-        return await FetchParticipationDtosAsync(participations);
+        var participations = await courseParticipationRepository
+            .GetParticipationsForCourseAsync(courseId, fetchCourses: false, fetchUsers: true);
+        return await FetchParticipationDtosWithoutCourseAsync(participations);
     }
 
-    public async Task<IEnumerable<CourseParticipationDto>> GetParticipationsForUserAsync(Guid userId)
+    public async Task<IEnumerable<CourseParticipationWithoutUserDto>> GetParticipationsForUserAsync(Guid userId)
     {
         var participations = await courseParticipationRepository.GetParticipationsForUserAsync(userId);
-        return await FetchParticipationDtosAsync(participations);
+        return FetchParticipationDtosWithoutUser(participations);
     }
 
     internal async Task<CourseParticipation?> GetAuthorizedParticipationAsync(HttpContext httpContext, Guid courseId, bool adminOnly = true)
@@ -68,14 +69,13 @@ public class CourseParticipationService(
         return participation;
     }
 
-    public async Task<bool> DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
+    public async Task DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
         var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);
-        if (participation is null) return false;
+        if (participation is null) return;
 
         await courseParticipationRepository.DeleteParticipationAsync(participation);
-        return true;
     }
 
     public async Task<bool> DeleteParticipationAsync(HttpContext httpContext, Guid courseId, Guid userId)
@@ -90,18 +90,32 @@ public class CourseParticipationService(
         return true;
     }
 
-    private async Task<IEnumerable<CourseParticipationDto>> FetchParticipationDtosAsync(
+    private async Task<IEnumerable<CourseParticipationWithoutCourseDto>> FetchParticipationDtosWithoutCourseAsync(
         IEnumerable<CourseParticipation> participations)
     {
         return await participations
             .ToAsyncEnumerable()
-            .SelectAwait(async p => await FetchParticipationDtoAsync(p))
+            .SelectAwait(async p => await FetchParticipationDtoWithoutCourseAsync(p))
             .ToListAsync();
     }
+
+    private static IEnumerable<CourseParticipationWithoutUserDto> FetchParticipationDtosWithoutUser(
+        IEnumerable<CourseParticipation> participations)
+    {
+        return participations.Select(p => new CourseParticipationWithoutUserDto(
+            CourseService.MapToCourseDto(p.Course),
+            p.IsCourseAdministrator,
+            p.JoinTime));
+    }
+
+    private async Task<CourseParticipationDto> FetchParticipationDtoAsync(CourseParticipation participation) =>
+        new(CourseService.MapToCourseDto(participation.Course),
+            await userService.FetchUserDtoAsync(participation.User),
+            participation.IsCourseAdministrator,
+            participation.JoinTime);
     
-    private async Task<CourseParticipationDto> FetchParticipationDtoAsync(CourseParticipation courseParticipation) =>
-        new(CourseService.MapToCourseDto(courseParticipation.Course),
-            await userService.FetchUserDtoAsync(courseParticipation.User),
-            courseParticipation.IsCourseAdministrator,
-            courseParticipation.JoinTime);
+    private async Task<CourseParticipationWithoutCourseDto> FetchParticipationDtoWithoutCourseAsync(CourseParticipation participation) =>
+        new(await userService.FetchUserDtoAsync(participation.User),
+            participation.IsCourseAdministrator,
+            participation.JoinTime);
 }

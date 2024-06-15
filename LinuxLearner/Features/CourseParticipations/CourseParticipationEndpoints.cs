@@ -22,14 +22,14 @@ public static class CourseParticipationEndpoints
         return courseUserDto is null ? TypedResults.NotFound() : TypedResults.Ok(courseUserDto);
     }
 
-    private static async Task<Results<NotFound, Ok<IEnumerable<CourseParticipationDto>>>> GetParticipationsForCourse(
+    private static async Task<Results<NotFound, Ok<IEnumerable<CourseParticipationWithoutCourseDto>>>> GetParticipationsForCourse(
         CourseParticipationService courseParticipationService, HttpContext httpContext, Guid courseId)
     {
         var courseParticipationDtos = await courseParticipationService.GetParticipationsForCourseAsync(httpContext, courseId);
         return courseParticipationDtos is null ? TypedResults.NotFound() : TypedResults.Ok(courseParticipationDtos);
     }
     
-    private static async Task<Ok<IEnumerable<CourseParticipationDto>>> GetParticipationsForUser(
+    private static async Task<Ok<IEnumerable<CourseParticipationWithoutUserDto>>> GetParticipationsForUser(
         CourseParticipationService courseParticipationService, Guid userId)
     {
         var courseParticipationDtos = await courseParticipationService.GetParticipationsForUserAsync(userId);

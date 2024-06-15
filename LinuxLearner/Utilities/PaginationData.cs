@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Extensions;
 
-namespace LinuxLearner.Domain;
+namespace LinuxLearner.Utilities;
 
 public record PaginationData(
     [property: JsonPropertyName("totalAmount")]

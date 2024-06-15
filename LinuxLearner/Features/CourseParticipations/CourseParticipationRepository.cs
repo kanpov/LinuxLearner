@@ -23,7 +23,7 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
         return participation;
     }
 
-    public async Task<IEnumerable<CourseParticipation>> GetParticipationsForCourseAsync(Guid courseId)
+    public async Task<IEnumerable<CourseParticipation>> GetParticipationsForCourseAsync(Guid courseId, bool fetchCourses, bool fetchUsers)
     {
         var participations = await fusionCache.GetOrSetAsync<List<CourseParticipation>>(
             $"/course-participation/course/{courseId}",
@@ -31,7 +31,6 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
             {
                 return await dbContext.CourseParticipations
                     .Where(p => p.CourseId == courseId)
-                    .Include(p => p.Course)
                     .Include(p => p.User)
                     .ToListAsync(token);
             });
@@ -48,7 +47,6 @@ public class CourseParticipationRepository(AppDbContext dbContext, IFusionCache 
                 return await dbContext.CourseParticipations
                     .Where(p => p.UserId == userId)
                     .Include(p => p.Course)
-                    .Include(p => p.User)
                     .ToListAsync(token);
             });
         dbContext.AttachRange(participations);
