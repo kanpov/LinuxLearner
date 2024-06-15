@@ -20,7 +20,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
     }
 
     public async Task<(int, IEnumerable<Course>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
-        AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter, bool ignoreDiscoverability)
+        AcceptanceMode? acceptanceMode, string? search, CourseSortParameter sortParameter, bool ignoreDiscoverability)
     {
         var results = dbContext.Courses.AsQueryable();
 
@@ -42,6 +42,12 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         if (acceptanceMode is not null)
         {
             results = results.Where(c => c.AcceptanceMode == acceptanceMode);
+        }
+
+        if (search is not null)
+        {
+            results = results.Where(c =>
+                c.Name.Contains(search) || (c.Description != null && c.Description.Contains(search)));
         }
 
         results = sortParameter switch
