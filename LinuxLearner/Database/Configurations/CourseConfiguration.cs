@@ -11,6 +11,8 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.Name).IsRequired();
+        builder.Property(c => c.AcceptanceMode).IsRequired();
+        builder.Property(c => c.Discoverable).IsRequired();
 
         builder.ToTable("Courses");
     }

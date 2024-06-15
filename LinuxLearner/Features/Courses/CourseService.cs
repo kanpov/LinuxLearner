@@ -22,13 +22,16 @@ public class CourseService(
         return MapToCourseDto(course);
     }
 
-    public async Task<(int, IEnumerable<CourseDto>)> GetCoursesAsync(int page, int pageSize, string? name = null,
+    public async Task<(int, IEnumerable<CourseDto>)> GetCoursesAsync(HttpContext httpContext, int page, int pageSize, string? name = null,
         string? description = null, AcceptanceMode? acceptanceMode = null, CourseSortParameter sortParameter = CourseSortParameter.Name)
     {
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
+
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        var ignoreDiscoverability = user.UserType == UserType.Admin;
         
         var (totalAmount, courses) = await courseRepository.GetCoursesAsync(page, pageSize, name, description,
-            acceptanceMode, sortParameter);
+            acceptanceMode, sortParameter, ignoreDiscoverability);
         var courseDtos = courses.Select(MapToCourseDto);
         
         return (totalAmount, courseDtos);
@@ -52,16 +55,6 @@ public class CourseService(
         return true;
     }
 
-    public async Task<bool> ForcePatchCourseAsync(Guid courseId, CoursePatchDto coursePatchDto)
-    {
-        var course = await courseRepository.GetCourseAsync(courseId);
-        if (course is null) return false;
-        
-        ProjectCoursePatchDto(course, coursePatchDto);
-        await courseRepository.UpdateCourseAsync(course);
-        return true;
-    }
-
     public async Task<bool> DeleteCourseAsync(HttpContext httpContext, Guid courseId)
     {
         var participation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId);
@@ -70,24 +63,16 @@ public class CourseService(
         await courseRepository.DeleteCourseAsync(participation.Course);
         return true;
     }
-
-    public async Task<bool> ForceDeleteCourseAsync(Guid courseId)
-    {
-        var course = await courseRepository.GetCourseAsync(courseId);
-        if (course is null) return false;
-
-        await courseRepository.DeleteCourseAsync(course);
-        return true;
-    }
     
     public static CourseDto MapToCourseDto(Course course) =>
-        new(course.Id, course.Name, course.Description, course.AcceptanceMode);
+        new(course.Id, course.Name, course.Description, course.AcceptanceMode, course.Discoverable);
 
     private static Course MapToCourse(CourseCreateDto courseCreateDto) => new()
     {
         Name = courseCreateDto.Name,
         Description = courseCreateDto.Description,
-        AcceptanceMode = courseCreateDto.AcceptanceMode
+        AcceptanceMode = courseCreateDto.AcceptanceMode,
+        Discoverable = courseCreateDto.Discoverable
     };
 
     private static void ProjectCoursePatchDto(Course course, CoursePatchDto coursePatchDto)
@@ -95,5 +80,6 @@ public class CourseService(
         if (coursePatchDto.Name is not null) course.Name = coursePatchDto.Name;
         course.Description = coursePatchDto.Description;
         if (coursePatchDto.AcceptanceMode.HasValue) course.AcceptanceMode = coursePatchDto.AcceptanceMode.Value;
+        if (coursePatchDto.Discoverable.HasValue) course.Discoverable = coursePatchDto.Discoverable.Value;
     }
 }

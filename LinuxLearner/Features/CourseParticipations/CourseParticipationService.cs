@@ -83,11 +83,6 @@ public class CourseParticipationService(
         var administrativeParticipation = await GetAuthorizedParticipationAsync(httpContext, courseId);
         if (administrativeParticipation is null) return false;
 
-        return await ForceDeleteParticipationAsync(courseId, userId);
-    }
-
-    public async Task<bool> ForceDeleteParticipationAsync(Guid courseId, Guid userId)
-    {
         var participation = await courseParticipationRepository.GetParticipationAsync(courseId, userId);
         if (participation is null) return false;
 

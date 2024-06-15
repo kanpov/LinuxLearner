@@ -6,4 +6,5 @@ public record CourseDto(
     Guid Id,
     string Name,
     string? Description,
-    AcceptanceMode AcceptanceMode);
+    AcceptanceMode AcceptanceMode,
+    bool Discoverable);

@@ -35,38 +35,42 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     [Theory, CustomAutoData]
     public async Task GetCoursesAsync_ShouldPerformPaging(Fixture fixture)
     {
+        var httpContext = MakeContext(UserType.Admin);
+        
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 5, sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 5, sortParameter: CourseSortParameter.Name),
             courses => courses.OrderBy(c => c.Name).Take(5).ToList());
         
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(2, 5, sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 2, 5, sortParameter: CourseSortParameter.Name),
             courses => courses.OrderBy(c => c.Name).Skip(5).Take(5).ToList());
         
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(3, 5, sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 3, 5, sortParameter: CourseSortParameter.Name),
             courses => courses.OrderBy(c => c.Name).Skip(10).Take(5).ToList());
     }
 
     [Theory, CustomAutoData]
     public async Task GetCoursesAsync_ShouldPerformFiltering(Fixture fixture)
     {
+        var httpContext = MakeContext(UserType.Admin);
+        
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 15, name: "1", sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, name: "1", sortParameter: CourseSortParameter.Name),
             courses => courses
                 .OrderBy(c => c.Name)
                 .Where(c => c.Name.Contains('1'))
                 .ToList());
 
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 15, description: "5", sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, description: "5", sortParameter: CourseSortParameter.Name),
             courses => courses
                 .OrderBy(c => c.Name)
                 .Where(c => c.Description is not null && c.Description.Contains('5'))
                 .ToList());
 
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 15, acceptanceMode: AcceptanceMode.Closed),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, acceptanceMode: AcceptanceMode.Closed),
             courses => courses
                 .OrderBy(c => c.Name)
                 .Where(c => c.AcceptanceMode == AcceptanceMode.Closed)
@@ -76,16 +80,18 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
     [Theory, CustomAutoData]
     public async Task GetCoursesAsync_ShouldPerformSorting(Fixture fixture)
     {
+        var httpContext = MakeContext(UserType.Admin);
+        
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 15, sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, sortParameter: CourseSortParameter.Name),
             courses => courses.OrderBy(c => c.Name).ToList());
         
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 15, sortParameter: CourseSortParameter.Id),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, sortParameter: CourseSortParameter.Id),
             courses => courses.OrderBy(c => c.Id).ToList());
         
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(1, 15, sortParameter: CourseSortParameter.Description),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, sortParameter: CourseSortParameter.Description),
             courses => courses.OrderBy(c => c.Description).ToList());
     }
 
@@ -113,24 +119,6 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         var httpContext = await ArrangeParticipation(course);
         var successful = await CourseService.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
         successful.Should().BeTrue();
-        Match(course, coursePatchDto);
-    }
-    
-    [Theory, CustomAutoData]
-    public async Task ForcePatchCourseAsync_ShouldRejectNonExistentCourse(Guid courseId, CoursePatchDto coursePatchDto)
-    {
-        var success = await CourseService.ForcePatchCourseAsync(courseId, coursePatchDto);
-        success.Should().BeFalse();
-    }
-
-    [Theory, CustomAutoData]
-    public async Task ForcePatchCourseAsync_ShouldPersist(Course course, CoursePatchDto coursePatchDto)
-    {
-        DbContext.Add(course);
-        await DbContext.SaveChangesAsync();
-
-        var success = await CourseService.ForcePatchCourseAsync(course.Id, coursePatchDto);
-        success.Should().BeTrue();
         Match(course, coursePatchDto);
     }
 
@@ -162,25 +150,6 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         successful.Should().BeFalse();
         var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
         queriedCourse.Should().NotBeNull();
-    }
-
-    [Theory, CustomAutoData]
-    public async Task ForceDeleteCourseAsync_ShouldRejectNonExistentCourse(Guid courseId)
-    {
-        var success = await CourseService.ForceDeleteCourseAsync(courseId);
-        success.Should().BeFalse();
-    }
-
-    [Theory, CustomAutoData]
-    public async Task ForceDeleteCourseAsync_ShouldPersist(Course course)
-    {
-        DbContext.Add(course);
-        await DbContext.SaveChangesAsync();
-        
-        var success = await CourseService.ForceDeleteCourseAsync(course.Id);
-        success.Should().BeTrue();
-        var queriedCourse = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == course.Id);
-        queriedCourse.Should().BeNull();
     }
     
     private async Task<HttpContext> ArrangeParticipation(Course course, bool isAdministrator = true)
