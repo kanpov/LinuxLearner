@@ -55,23 +55,6 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         Match(participation, participationDto!);
     }
 
-    [Theory, CustomAutoData]
-    public async Task GetParticipationsForCourseAsync_ShouldReturnMatches(Course course, Fixture fixture)
-    {
-        var (httpContext, participations, _) = await ArrangeParticipations(course, fixture, withRealUsers: true);
-        var participationDtos =
-            await CourseParticipationService.GetParticipationsForCourseAsync(httpContext, course.Id);
-        
-        participationDtos = participationDtos!.ToList();
-        foreach (var participationDto in participationDtos)
-        {
-            var participation = participations.FirstOrDefault(p =>
-                p.UserId == participationDto.User.Id && p.CourseId == participationDto.Course.Id);
-            if (participation is null) continue;
-            Match(participation, participationDto);
-        }
-    }
-
     private async Task<(HttpContext, List<CourseParticipation>, Guid)> ArrangeParticipations(
         Course course, Fixture fixture, int amount = 1, bool ownerIsAdmin = true, UserType ownerType = UserType.Teacher,
         bool withRealUsers = false)

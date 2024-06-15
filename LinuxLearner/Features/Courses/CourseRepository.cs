@@ -20,10 +20,15 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
     }
 
     public async Task<(int, IEnumerable<Course>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
-        AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter)
+        AcceptanceMode? acceptanceMode, CourseSortParameter sortParameter, bool ignoreDiscoverability)
     {
         var results = dbContext.Courses.AsQueryable();
 
+        if (!ignoreDiscoverability)
+        {
+            results = results.Where(c => c.Discoverable);
+        }
+        
         if (name is not null)
         {
             results = results.Where(c => c.Name.Contains(name));
@@ -44,6 +49,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
             CourseSortParameter.Id => results.OrderBy(i => i.Id),
             CourseSortParameter.Name => results.OrderBy(i => i.Name),
             CourseSortParameter.Description => results.OrderBy(i => i.Description),
+            CourseSortParameter.AcceptanceMode => results.OrderBy(i => i.AcceptanceMode),
             _ => throw new ArgumentOutOfRangeException(nameof(sortParameter), sortParameter, null)
         };
 

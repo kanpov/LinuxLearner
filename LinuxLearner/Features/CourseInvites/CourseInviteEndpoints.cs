@@ -18,6 +18,8 @@ public static class CourseInviteEndpoints
         teacherApi.MapPatch("/courses/{courseId:guid}/invites/{inviteId:guid}", PatchInvite);
         teacherApi.MapDelete("/courses/{courseId:guid}/invites/{inviteId:guid}", DeleteInvite);
         teacherApi.MapGet("/courses/{courseId:guid}/invites", GetInvitesForCourse);
+
+        adminApi.MapPost("/courses/{courseId:guid}/join/force", ForceJoinCourse);
     }
 
     private static async Task<Results<ValidationProblem, NotFound, CreatedAtRoute<CourseInviteDto>>> CreateInvite(
@@ -72,17 +74,25 @@ public static class CourseInviteEndpoints
         return success ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    private static async Task<Results<NotFound, NoContent>> JoinCourseWithInvite(
+    private static async Task<Results<ForbidHttpResult, NoContent>> JoinCourseWithInvite(
         CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId, Guid inviteId)
     {
         var success = await courseInviteService.JoinCourseWithInviteAsync(httpContext, courseId, inviteId);
-        return success ? TypedResults.NoContent() : TypedResults.NotFound();
+        return success ? TypedResults.NoContent() : TypedResults.Forbid();
     }
 
     private static async Task<Results<ForbidHttpResult, NoContent>> LeaveCourse(
         CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId)
     {
         var success = await courseInviteService.LeaveCourseAsync(httpContext, courseId);
+        return success ? TypedResults.NoContent() : TypedResults.Forbid();
+    }
+
+    private static async Task<Results<ForbidHttpResult, NoContent>> ForceJoinCourse(
+        CourseInviteService courseInviteService, HttpContext httpContext, Guid courseId,
+        bool asCourseAdministrator = true)
+    {
+        var success = await courseInviteService.ForceJoinCourseAsync(httpContext, courseId, asCourseAdministrator);
         return success ? TypedResults.NoContent() : TypedResults.Forbid();
     }
 }

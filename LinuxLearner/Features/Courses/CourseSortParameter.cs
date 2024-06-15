@@ -4,5 +4,6 @@ public enum CourseSortParameter
 {
     Id,
     Name,
-    Description
+    Description,
+    AcceptanceMode
 }

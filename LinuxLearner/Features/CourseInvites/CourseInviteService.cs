@@ -103,13 +103,26 @@ public class CourseInviteService(
         return true;
     }
 
+    public async Task<bool> ForceJoinCourseAsync(HttpContext httpContext, Guid courseId, bool asCourseAdministrator)
+    {
+        var existingParticipation = await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
+        if (existingParticipation is not null) return false;
+
+        var course = await courseService.GetCourseEntityAsync(courseId);
+        if (course is null) return false;
+
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        await courseParticipationService.CreateParticipationAsync(course, user, asCourseAdministrator);
+        return true;
+    }
+
     public async Task<bool> LeaveCourseAsync(HttpContext httpContext, Guid courseId)
     {
         var participation =
             await courseParticipationService.GetAuthorizedParticipationAsync(httpContext, courseId, adminOnly: false);
         if (participation is null) return false;
 
-        await courseParticipationService.ForceDeleteParticipationAsync(courseId, participation.UserId);
+        await courseParticipationService.DeleteOwnParticipationAsync(httpContext, courseId);
         return true;
     }
 
