@@ -49,6 +49,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
             CourseSortParameter.Id => results.OrderBy(i => i.Id),
             CourseSortParameter.Name => results.OrderBy(i => i.Name),
             CourseSortParameter.Description => results.OrderBy(i => i.Description),
+            CourseSortParameter.AcceptanceMode => results.OrderBy(i => i.AcceptanceMode),
             _ => throw new ArgumentOutOfRangeException(nameof(sortParameter), sortParameter, null)
         };
 
