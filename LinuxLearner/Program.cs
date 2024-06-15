@@ -108,12 +108,13 @@ builder.Services
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("cors-policy", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowAnyOrigin();
+            .AllowAnyOrigin()
+            .WithExposedHeaders("X-Pagination");
     });
 });
 
@@ -121,7 +122,7 @@ var app = builder.Build();
 
 // CORS
 app.UseRouting();
-app.UseCors("cors-policy");
+app.UseCors();
 // swagger
 if (app.Environment.IsDevelopment())
 {
