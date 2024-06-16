@@ -8,7 +8,7 @@ public class CourseParticipationService(
     CourseParticipationRepository courseParticipationRepository,
     UserService userService)
 {
-    public async Task CreateParticipationAsync(Course course, User user, bool isAdministrator)
+    internal async Task CreateParticipationAsync(Course course, User user, bool isAdministrator)
     {
         await courseParticipationRepository.AddParticipationAsync(new CourseParticipation
         {
@@ -69,7 +69,7 @@ public class CourseParticipationService(
         return participation;
     }
 
-    public async Task DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
+    internal async Task DeleteOwnParticipationAsync(HttpContext httpContext, Guid courseId)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
         var participation = await courseParticipationRepository.GetParticipationAsync(courseId, user.Id);

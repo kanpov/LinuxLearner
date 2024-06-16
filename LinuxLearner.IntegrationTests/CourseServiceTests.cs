@@ -205,7 +205,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         }
     }
 
-    private static void Match(Course course, CourseDto courseDto)
+    public static void Match(Course course, CourseDto courseDto)
     {
         course.Id.Should().Be(courseDto.Id);
         course.Name.Should().Be(courseDto.Name);

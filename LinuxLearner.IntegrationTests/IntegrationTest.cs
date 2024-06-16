@@ -79,6 +79,9 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         return httpContext;
     }
 
+    protected static DefaultHttpContext MakeContext(User baseUser) =>
+        MakeContext(baseUser.UserType, baseUser.Id);
+    
     protected static DefaultHttpContext MakeContext(UserType userType, Guid? userId = null)
     {
         return userType switch

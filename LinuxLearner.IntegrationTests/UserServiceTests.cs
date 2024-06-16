@@ -139,7 +139,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
             .ThrowAsync<KeycloakHttpClientException>();
     }
 
-    private static void Match(User user, UserDto userDto)
+    public static void Match(User user, UserDto userDto)
     {
         user.Id.Should().Be(userDto.Id);
         user.UserType.Should().Be(userDto.UserType);

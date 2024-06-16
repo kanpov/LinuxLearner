@@ -55,8 +55,92 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         Match(participation, participationDto!);
     }
 
+    [Theory, CustomAutoData]
+    public async Task GetParticipationsForCourseAsync_ShouldReturnMatches(Course course1, Course course2,
+        Fixture fixture)
+    {
+        var (httpContext, participations1, _) = await ArrangeParticipations(course1, fixture, withRealUsers: true);
+        await ArrangeParticipations(course2, fixture, withRealUsers: true);
+
+        var participationDtos =
+            (await CourseParticipationService.GetParticipationsForCourseAsync(httpContext, course1.Id))!.ToList();
+        participationDtos.Count.Should().Be(participations1.Count + 1);
+        var selfUserId = GetUserIdFromContext(httpContext);
+
+        foreach (var participationDto in participationDtos)
+        {
+            if (participationDto.User.Id == selfUserId) continue;
+            
+            var matchingParticipation = participations1.FirstOrDefault(p => p.UserId == participationDto.User.Id);
+            matchingParticipation.Should().NotBeNull();
+            Match(matchingParticipation!, participationDto);
+        }
+    }
+
+    [Theory, CustomAutoData]
+    public async Task GetParticipationsForCourseAsync_ShouldRejectNonParticipant(Course course, Fixture fixture)
+    {
+        await ArrangeParticipations(course, fixture);
+        var httpContext = MakeContext(UserType.Student);
+
+        var participationDtos =
+            await CourseParticipationService.GetParticipationsForCourseAsync(httpContext, course.Id);
+        participationDtos.Should().BeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task GetParticipationsForUserAsync_ShouldReturnMatches(Course course, Fixture fixture)
+    {
+        var (_, participations, _) = await ArrangeParticipations(course, fixture, withRealUsers: true);
+
+        foreach (var participation in participations)
+        {
+            var participationDtos =
+                (await CourseParticipationService.GetParticipationsForUserAsync(participation.UserId)).ToList();
+
+            participationDtos.Count.Should().Be(1);
+            var participationDto = participationDtos.First();
+            Match(participation, participationDto);
+        }
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteParticipationAsync_ShouldRejectNonAdministrator(Course course, Fixture fixture)
+    {
+        var (_, participations, userIdToDelete) = await ArrangeParticipations(course, fixture);
+        var nonAdministratorContext = MakeContext(participations.First().User);
+        
+        var success = await CourseParticipationService.DeleteParticipationAsync(nonAdministratorContext, course.Id, userIdToDelete);
+        success.Should().BeFalse();
+        var participation = await DbContext.CourseParticipations.FirstOrDefaultAsync(
+            p => p.UserId == userIdToDelete && p.CourseId == course.Id);
+        participation.Should().NotBeNull();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteParticipationAsync_ShouldRejectNonExistentParticipation(Course course, Fixture fixture)
+    {
+        var (httpContext, _, _) = await ArrangeParticipations(course, fixture);
+        var userIdToDelete = Guid.NewGuid();
+
+        var success = await CourseParticipationService.DeleteParticipationAsync(httpContext, course.Id, userIdToDelete);
+        success.Should().BeFalse();
+    }
+
+    [Theory, CustomAutoData]
+    public async Task DeleteParticipationAsync_ShouldPersist(Course course, Fixture fixture)
+    {
+        var (httpContext, _, userIdToDelete) = await ArrangeParticipations(course, fixture);
+        var success = await CourseParticipationService.DeleteParticipationAsync(httpContext, course.Id, userIdToDelete);
+
+        success.Should().BeTrue();
+        var participation = await DbContext.CourseParticipations.FirstOrDefaultAsync(
+            p => p.CourseId == course.Id && p.UserId == userIdToDelete);
+        participation.Should().BeNull();
+    }
+
     private async Task<(HttpContext, List<CourseParticipation>, Guid)> ArrangeParticipations(
-        Course course, Fixture fixture, int amount = 1, bool ownerIsAdmin = true, UserType ownerType = UserType.Teacher,
+        Course course, Fixture fixture, int amount = 5, bool ownerIsAdmin = true, UserType ownerType = UserType.Teacher,
         bool withRealUsers = false)
     {
         DefaultHttpContext httpContext;
@@ -98,8 +182,22 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
 
     private static void Match(CourseParticipation participation, CourseParticipationDto participationDto)
     {
-        participation.CourseId.Should().Be(participationDto.Course.Id);
-        participation.UserId.Should().Be(participationDto.User.Id);
+        CourseServiceTests.Match(participation.Course, participationDto.Course);
+        UserServiceTests.Match(participation.User, participationDto.User);
+        participation.IsCourseAdministrator.Should().Be(participationDto.IsCourseAdministrator);
+        participation.JoinTime.Should().Be(participationDto.JoinTime);
+    }
+
+    private static void Match(CourseParticipation participation, CourseParticipationWithoutCourseDto participationDto)
+    {
+        UserServiceTests.Match(participation.User, participationDto.User);
+        participation.IsCourseAdministrator.Should().Be(participationDto.IsCourseAdministrator);
+        participation.JoinTime.Should().Be(participationDto.JoinTime);
+    }
+
+    private static void Match(CourseParticipation participation, CourseParticipationWithoutUserDto participationDto)
+    {
+        CourseServiceTests.Match(participation.Course, participationDto.Course);
         participation.IsCourseAdministrator.Should().Be(participationDto.IsCourseAdministrator);
         participation.JoinTime.Should().Be(participationDto.JoinTime);
     }
