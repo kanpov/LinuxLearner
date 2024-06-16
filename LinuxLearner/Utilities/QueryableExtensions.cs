@@ -8,4 +8,10 @@ public static class QueryableExtensions
     {
         return condition ? queryable.Where(predicate) : queryable;
     }
+
+    public static IOrderedQueryable<TSource> OrderWithReversal<TSource, TKey>(this IQueryable<TSource> queryable,
+        bool reverse, Expression<Func<TSource, TKey>> keySelector)
+    {
+        return reverse ? queryable.OrderByDescending(keySelector) : queryable.OrderBy(keySelector);
+    }
 }

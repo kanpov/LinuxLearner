@@ -21,10 +21,11 @@ public static class CourseEndpoints
         CourseService courseService, int page, HttpContext httpContext,
         int pageSize = 10, string? name = null, string? description = null,
         AcceptanceMode? acceptanceMode = null, string? search = null,
-        CourseSortParameter sortParameter = CourseSortParameter.Name)
+        CourseSortParameter sortParameter = CourseSortParameter.Name,
+        bool reverseSort = false)
     {
         var (totalAmount, courseDtos) =
-            await courseService.GetCoursesAsync(httpContext, page, pageSize, name, description, acceptanceMode, search, sortParameter);
+            await courseService.GetCoursesAsync(httpContext, page, pageSize, name, description, acceptanceMode, search, sortParameter, reverseSort);
         PaginationData.Add(httpContext, totalAmount, page, pageSize);
         
         return TypedResults.Ok(courseDtos);

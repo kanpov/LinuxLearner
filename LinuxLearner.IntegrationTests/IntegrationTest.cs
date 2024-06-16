@@ -39,7 +39,14 @@ public class IntegrationTest : IClassFixture<IntegrationTestFactory>
         await KeycloakUserClient.CreateUserAsync("master", new UserRepresentation
         {
             Username = username,
-            Enabled = true
+            Enabled = true,
+            Attributes = new Dictionary<string, ICollection<string>>
+            {
+                { "description", [Guid.NewGuid().ToString()] }
+            },
+            Email = $"{Guid.NewGuid()}@mail.com",
+            FirstName = Guid.NewGuid().ToString(),
+            LastName = Guid.NewGuid().ToString()
         });
 
         var userService = Services.GetRequiredService<UserService>();

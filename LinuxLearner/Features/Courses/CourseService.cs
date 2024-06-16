@@ -23,7 +23,8 @@ public class CourseService(
     }
 
     public async Task<(int, IEnumerable<CourseDto>)> GetCoursesAsync(HttpContext httpContext, int page, int pageSize, string? name = null,
-        string? description = null, AcceptanceMode? acceptanceMode = null, string? search = null, CourseSortParameter sortParameter = CourseSortParameter.Name)
+        string? description = null, AcceptanceMode? acceptanceMode = null, string? search = null, CourseSortParameter sortParameter = CourseSortParameter.Name,
+        bool reverseSort = false)
     {
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
 
@@ -31,7 +32,7 @@ public class CourseService(
         var ignoreDiscoverability = user.UserType == UserType.Admin;
         
         var (totalAmount, courses) = await courseRepository.GetCoursesAsync(page, pageSize, name, description,
-            acceptanceMode, search, sortParameter, ignoreDiscoverability);
+            acceptanceMode, search, sortParameter, ignoreDiscoverability, reverseSort);
         var courseDtos = courses.Select(MapToCourseDto);
         
         return (totalAmount, courseDtos);

@@ -20,8 +20,9 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         return course;
     }
 
-    public async Task<(int, IEnumerable<Course>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
-        AcceptanceMode? acceptanceMode, string? search, CourseSortParameter sortParameter, bool ignoreDiscoverability)
+    public async Task<(int, IEnumerable<Course>)> GetCoursesAsync(int page, int pageSize, string? name,
+        string? description, AcceptanceMode? acceptanceMode, string? search, CourseSortParameter sortParameter, bool ignoreDiscoverability,
+        bool reverseSort)
     {
         var results = dbContext.Courses
             .WhereIf(!ignoreDiscoverability, c => c.Discoverable)
@@ -35,10 +36,10 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
 
         results = sortParameter switch
         {
-            CourseSortParameter.Id => results.OrderBy(i => i.Id),
-            CourseSortParameter.Name => results.OrderBy(i => i.Name),
-            CourseSortParameter.Description => results.OrderBy(i => i.Description),
-            CourseSortParameter.AcceptanceMode => results.OrderBy(i => i.AcceptanceMode),
+            CourseSortParameter.Id => results.OrderWithReversal(reverseSort, i => i.Id),
+            CourseSortParameter.Name => results.OrderWithReversal(reverseSort, i => i.Name),
+            CourseSortParameter.Description => results.OrderWithReversal(reverseSort, i => i.Description),
+            CourseSortParameter.AcceptanceMode => results.OrderWithReversal(reverseSort, i => i.AcceptanceMode),
             _ => throw new ArgumentOutOfRangeException(nameof(sortParameter), sortParameter, null)
         };
 
