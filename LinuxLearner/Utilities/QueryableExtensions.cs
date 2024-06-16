@@ -1,0 +1,11 @@
+using System.Linq.Expressions;
+
+namespace LinuxLearner.Utilities;
+
+public static class QueryableExtensions
+{
+    public static IQueryable<TSource> WhereIf<TSource>(this IQueryable<TSource> queryable, bool condition, Expression<Func<TSource, bool>> predicate)
+    {
+        return condition ? queryable.Where(predicate) : queryable;
+    }
+}

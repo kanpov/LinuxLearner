@@ -1,5 +1,6 @@
 using LinuxLearner.Database;
 using LinuxLearner.Domain;
+using LinuxLearner.Utilities;
 using Microsoft.EntityFrameworkCore;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -22,33 +23,15 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
     public async Task<(int, IEnumerable<Course>)> GetCoursesAsync(int page, int pageSize, string? name, string? description,
         AcceptanceMode? acceptanceMode, string? search, CourseSortParameter sortParameter, bool ignoreDiscoverability)
     {
-        var results = dbContext.Courses.AsQueryable();
-
-        if (!ignoreDiscoverability)
-        {
-            results = results.Where(c => c.Discoverable);
-        }
-        
-        if (name is not null)
-        {
-            results = results.Where(c => EF.Functions.ILike(c.Name, $"%{name}%"));
-        }
-
-        if (description is not null)
-        {
-            results = results.Where(c => c.Description != null && EF.Functions.ILike(c.Description, $"%{description}%"));
-        }
-
-        if (acceptanceMode is not null)
-        {
-            results = results.Where(c => c.AcceptanceMode == acceptanceMode);
-        }
-
-        if (search is not null)
-        {
-            results = results.Where(c =>
-                EF.Functions.ILike(c.Name, $"%{search}%") || (c.Description != null && EF.Functions.ILike(c.Description, $"%{search}%")));
-        }
+        var results = dbContext.Courses
+            .WhereIf(!ignoreDiscoverability, c => c.Discoverable)
+            .WhereIf(name is not null, c => EF.Functions.ILike(c.Name, $"%{name}%"))
+            .WhereIf(description is not null, c =>
+                c.Description != null && EF.Functions.ILike(c.Description, $"%{description}%"))
+            .WhereIf(acceptanceMode is not null, c => c.AcceptanceMode == acceptanceMode)
+            .WhereIf(search is not null, c =>
+                EF.Functions.ILike(c.Name, $"%{search}%")
+                || (c.Description != null && EF.Functions.ILike(c.Description, $"%{search}%")));
 
         results = sortParameter switch
         {
