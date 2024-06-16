@@ -56,17 +56,17 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         var httpContext = MakeContext(UserType.Admin);
         
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(httpContext, 1, 15, name: "1", sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, name: "C", sortParameter: CourseSortParameter.Name),
             courses => courses
                 .OrderBy(c => c.Name)
-                .Where(c => c.Name.Contains('1'))
+                .Where(c => c.Name.Contains('C', StringComparison.OrdinalIgnoreCase))
                 .ToList());
 
         await AssertGetCoursesAsync(fixture,
-            () => CourseService.GetCoursesAsync(httpContext, 1, 15, description: "5", sortParameter: CourseSortParameter.Name),
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, description: "C", sortParameter: CourseSortParameter.Name),
             courses => courses
                 .OrderBy(c => c.Name)
-                .Where(c => c.Description is not null && c.Description.Contains('5'))
+                .Where(c => c.Description is not null && c.Description.Contains('C', StringComparison.OrdinalIgnoreCase))
                 .ToList());
 
         await AssertGetCoursesAsync(fixture,
@@ -75,6 +75,24 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
                 .OrderBy(c => c.Name)
                 .Where(c => c.AcceptanceMode == AcceptanceMode.Closed)
                 .ToList());
+
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(httpContext, 1, 15, search: "Y"),
+            courses => courses
+                .OrderBy(c => c.Name)
+                .Where(c => c.Name.Contains('Y', StringComparison.OrdinalIgnoreCase) ||
+                            (c.Description is not null && c.Description.Contains('Y', StringComparison.OrdinalIgnoreCase)))
+                .ToList());
+    }
+
+    [Theory, CustomAutoData]
+    public async Task GetCoursesAsync_ShouldCheckDiscoverabilityDependingOnHttpContext(Fixture fixture)
+    {
+        var studentContext = MakeContext(UserType.Student);
+
+        await AssertGetCoursesAsync(fixture,
+            () => CourseService.GetCoursesAsync(studentContext, 1, 15),
+            courses => courses.Where(c => c.Discoverable).ToList());
     }
 
     [Theory, CustomAutoData]
