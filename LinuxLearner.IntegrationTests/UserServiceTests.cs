@@ -38,7 +38,7 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
         userDto.Should().NotBeNull();
         var queriedUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
         queriedUser.Should().NotBeNull();
-        Match(queriedUser!, userDto!);
+        Matcher.Match(queriedUser!, userDto!);
     }
 
     [Fact]
@@ -137,11 +137,5 @@ public class UserServiceTests(IntegrationTestFactory factory) : IntegrationTest(
             .Awaiting(async () => await KeycloakUserClient.GetUserAsync("master", userId.ToString()))
             .Should()
             .ThrowAsync<KeycloakHttpClientException>();
-    }
-
-    public static void Match(User user, UserDto userDto)
-    {
-        user.Id.Should().Be(userDto.Id);
-        user.UserType.Should().Be(userDto.UserType);
     }
 }

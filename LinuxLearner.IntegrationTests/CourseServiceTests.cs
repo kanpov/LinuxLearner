@@ -22,7 +22,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
 
         var courseDto = await CourseService.GetCourseAsync(course.Id);
         courseDto.Should().NotBeNull();
-        Match(course, courseDto!);
+        Matcher.Match(course, courseDto!);
     }
 
     [Theory, CustomAutoData]
@@ -119,11 +119,11 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         var httpContext = MakeContext(UserType.Teacher);
         var courseDto = await CourseService.CreateCourseAsync(httpContext, courseCreateDto);
         
-        Match(courseDto, courseCreateDto);
+        Matcher.Match(courseDto, courseCreateDto);
         
         var course = await DbContext.Courses.FirstOrDefaultAsync(c => c.Id == courseDto.Id);
         course.Should().NotBeNull();
-        Match(course!, courseDto);
+        Matcher.Match(course!, courseDto);
 
         var courseParticipation = await DbContext.CourseParticipations.FirstOrDefaultAsync(
             p => p.CourseId == course!.Id && p.UserId == GetUserIdFromContext(httpContext));
@@ -137,7 +137,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         var httpContext = await ArrangeParticipation(course);
         var successful = await CourseService.PatchCourseAsync(httpContext, course.Id, coursePatchDto);
         successful.Should().BeTrue();
-        Match(course, coursePatchDto);
+        Matcher.Match(course, coursePatchDto);
     }
 
     [Theory, CustomAutoData]
@@ -201,29 +201,7 @@ public class CourseServiceTests(IntegrationTestFactory factory) : IntegrationTes
         {
             var courseDto = returnedCourses.FirstOrDefault(c => c.Id == course.Id);
             courseDto.Should().NotBeNull();
-            Match(course, courseDto!);
+            Matcher.Match(course, courseDto!);
         }
-    }
-
-    public static void Match(Course course, CourseDto courseDto)
-    {
-        course.Id.Should().Be(courseDto.Id);
-        course.Name.Should().Be(courseDto.Name);
-        course.Description.Should().Be(courseDto.Description);
-        course.AcceptanceMode.Should().Be(courseDto.AcceptanceMode);
-    }
-    
-    private static void Match(Course course, CoursePatchDto coursePatchDto)
-    {
-        course.Name.Should().Be(coursePatchDto.Name);
-        course.Description.Should().Be(coursePatchDto.Description);
-        course.AcceptanceMode.Should().Be(coursePatchDto.AcceptanceMode);
-    }
-
-    private static void Match(CourseDto courseDto, CourseCreateDto courseCreateDto)
-    {
-        courseDto.Name.Should().Be(courseCreateDto.Name);
-        courseDto.Description.Should().Be(courseCreateDto.Description);
-        courseDto.AcceptanceMode.Should().Be(courseCreateDto.AcceptanceMode);
     }
 }

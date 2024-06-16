@@ -52,7 +52,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         var participationDto =
             await CourseParticipationService.GetParticipationAsync(participation.CourseId, participation.UserId);
         participationDto.Should().NotBeNull();
-        Match(participation, participationDto!);
+        Matcher.Match(participation, participationDto!);
     }
 
     [Theory, CustomAutoData]
@@ -73,7 +73,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
             
             var matchingParticipation = participations1.FirstOrDefault(p => p.UserId == participationDto.User.Id);
             matchingParticipation.Should().NotBeNull();
-            Match(matchingParticipation!, participationDto);
+            Matcher.Match(matchingParticipation!, participationDto);
         }
     }
 
@@ -100,7 +100,7 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
 
             participationDtos.Count.Should().Be(1);
             var participationDto = participationDtos.First();
-            Match(participation, participationDto);
+            Matcher.Match(participation, participationDto);
         }
     }
 
@@ -178,27 +178,5 @@ public class CourseParticipationServiceTests(IntegrationTestFactory factory) : I
         await DbContext.SaveChangesAsync();
 
         return (httpContext, courseParticipations, courseParticipations.First().UserId);
-    }
-
-    private static void Match(CourseParticipation participation, CourseParticipationDto participationDto)
-    {
-        CourseServiceTests.Match(participation.Course, participationDto.Course);
-        UserServiceTests.Match(participation.User, participationDto.User);
-        participation.IsCourseAdministrator.Should().Be(participationDto.IsCourseAdministrator);
-        participation.JoinTime.Should().Be(participationDto.JoinTime);
-    }
-
-    private static void Match(CourseParticipation participation, CourseParticipationWithoutCourseDto participationDto)
-    {
-        UserServiceTests.Match(participation.User, participationDto.User);
-        participation.IsCourseAdministrator.Should().Be(participationDto.IsCourseAdministrator);
-        participation.JoinTime.Should().Be(participationDto.JoinTime);
-    }
-
-    private static void Match(CourseParticipation participation, CourseParticipationWithoutUserDto participationDto)
-    {
-        CourseServiceTests.Match(participation.Course, participationDto.Course);
-        participation.IsCourseAdministrator.Should().Be(participationDto.IsCourseAdministrator);
-        participation.JoinTime.Should().Be(participationDto.JoinTime);
     }
 }
