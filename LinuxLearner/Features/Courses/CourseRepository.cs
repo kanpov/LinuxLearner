@@ -31,12 +31,12 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         
         if (name is not null)
         {
-            results = results.Where(c => c.Name.Contains(name));
+            results = results.Where(c => EF.Functions.ILike(c.Name, $"%{name}%"));
         }
 
         if (description is not null)
         {
-            results = results.Where(c => c.Description != null && c.Description.Contains(description));
+            results = results.Where(c => c.Description != null && EF.Functions.ILike(c.Description, $"%{description}%"));
         }
 
         if (acceptanceMode is not null)
@@ -47,7 +47,7 @@ public class CourseRepository(AppDbContext dbContext, IFusionCache fusionCache)
         if (search is not null)
         {
             results = results.Where(c =>
-                c.Name.Contains(search) || (c.Description != null && c.Description.Contains(search)));
+                EF.Functions.ILike(c.Name, $"%{search}%") || (c.Description != null && EF.Functions.ILike(c.Description, $"%{search}%")));
         }
 
         results = sortParameter switch

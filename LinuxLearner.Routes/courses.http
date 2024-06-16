@@ -72,7 +72,7 @@ Authorization: Bearer {{student-token}}
 ###
 
 // Get courses
-GET {{student-api}}/courses?page=1&pageSize=10&sortParameter=Name
+GET {{student-api}}/courses?page=1&pageSize=10&search=desc
 Authorization: Bearer {{student-token}}
 ###
 
@@ -89,3 +89,13 @@ Authorization: Bearer {{student-token}}
 // Get specific participation
 GET {{student-api}}/participations/course/dad7a77a-5464-4406-8401-035d51a1e5a4/user/e78c4b76-bbc9-4227-b182-c895ed930c74
 Authorization: Bearer {{student-token}}
+###
+
+// Patch course
+PATCH {{teacher-api}}/courses/dad7a77a-5464-4406-8401-035d51a1e5a4
+Authorization: Bearer {{teacher-token}}
+Content-Type: application/json
+
+{
+  "acceptanceMode": "Closed"
+}
