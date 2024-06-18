@@ -9,6 +9,7 @@ public static class CourseParticipationEndpoints
         studentApi.MapGet("/participations/course/{courseId:guid}/user/{userId:guid}", GetParticipation);
         studentApi.MapGet("/participations/course/{courseId:guid}", GetParticipationsForCourse);
         studentApi.MapGet("/participations/user/{userId:guid}", GetParticipationsForUser);
+        studentApi.MapGet("/participations/user/self", GetParticipationsForSelf);
 
         teacherApi.MapDelete("/participations/course/{courseId:guid}/user/{userId:guid}", DeleteParticipation);
         teacherApi.MapPost("/participations/course/{courseId:guid}/user/{userId:guid}/administration/grant", GrantCourseAdministration);
@@ -33,6 +34,13 @@ public static class CourseParticipationEndpoints
         CourseParticipationService courseParticipationService, Guid userId)
     {
         var courseParticipationDtos = await courseParticipationService.GetParticipationsForUserAsync(userId);
+        return TypedResults.Ok(courseParticipationDtos);
+    }
+
+    private static async Task<Ok<IEnumerable<CourseParticipationWithoutUserDto>>> GetParticipationsForSelf(
+        CourseParticipationService courseParticipationService, HttpContext httpContext)
+    {
+        var courseParticipationDtos = await courseParticipationService.GetParticipationsForSelfAsync(httpContext);
         return TypedResults.Ok(courseParticipationDtos);
     }
     

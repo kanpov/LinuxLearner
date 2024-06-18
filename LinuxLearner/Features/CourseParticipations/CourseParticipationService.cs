@@ -59,6 +59,12 @@ public class CourseParticipationService(
         return FetchParticipationDtosWithoutUser(participations);
     }
 
+    public async Task<IEnumerable<CourseParticipationWithoutUserDto>> GetParticipationsForSelfAsync(HttpContext httpContext)
+    {
+        var user = await userService.GetAuthorizedUserAsync(httpContext);
+        return await GetParticipationsForUserAsync(user.Id);
+    }
+
     internal async Task<CourseParticipation?> GetAuthorizedParticipationAsync(HttpContext httpContext, Guid courseId, bool adminOnly = true)
     {
         var user = await userService.GetAuthorizedUserAsync(httpContext);
